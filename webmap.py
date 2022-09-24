@@ -27,7 +27,7 @@ def add_ee_layer(self, ee_image_object, vis_params, name):
 folium.Map.add_ee_layer = add_ee_layer
 
 #################### MAIN MAP ####################
-m = folium.Map(location = [36.606519, 2.372596], tiles='OpenStreetMap', zoom_start = 12, control_scale = True)
+m = folium.Map(location = [36.606500, 2.352500], tiles='OpenStreetMap', zoom_start = 12, control_scale = True)
 
 basemap2 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
 basemap2.add_to(m)
@@ -72,6 +72,21 @@ NBR_params = {
   'palette': ['black', 'white'],
 }
 
+# ##### Delta NBR (dNBR)
+dNBR = pre_fire_NBR.subtract(post_fire_NBR)
+# dNBR isual parameters for greyscale styling
+dNBR_params = {
+  'min' : -0.12,
+  'max': 0.82,
+  'palette': ['black', 'white']
+}
+
+# dNBR Color Ramp styling
+dNBR_cr_params = {
+  'min': -0.12,
+  'max': 0.82,
+  'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
+}
 
 #################### COMPUTED RASTER LAYERS ####################
 ##### TCI
@@ -82,6 +97,9 @@ m.add_ee_layer(post_fire_tci, tci_params, 'Sentinel-2 TCI (Post-fire)')
 m.add_ee_layer(pre_fire_NBR, NBR_params, 'Pre-Fire NBR')
 m.add_ee_layer(post_fire_NBR, NBR_params, 'Post-Fire NBR')
 
+##### Delta NBR
+m.add_ee_layer(dNBR, dNBR_params, 'dNBR')
+m.add_ee_layer(dNBR, dNBR_cr_params, 'dNBR - Burn Severity')
 
 ##### Folium Map Layer Control
 folium.LayerControl(collapsed=False).add_to(m)
