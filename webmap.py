@@ -88,6 +88,24 @@ dNBR_cr_params = {
   'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
 }
 
+# ########## ANALYSIS RESULTS CLASSIFICATION
+# ##### NDVI classification: 7 classes
+
+dNBR_classified = ee.Image(dNBR) \
+  .where(dNBR.gte(-0.12).And(dNBR.lt(0)), 1) \
+  .where(dNBR.gte(0).And(dNBR.lt(0.1)), 2) \
+  .where(dNBR.gte(0.1).And(dNBR.lt(0.27)), 3) \
+  .where(dNBR.gte(0.27).And(dNBR.lt(0.37)), 4) \
+  .where(dNBR.gte(0.37).And(dNBR.lt(0.44)), 5) \
+  .where(dNBR.gte(0.44).And(dNBR.lt(0.66)), 6) \
+  .where(dNBR.gte(0.66).And(dNBR.lt(0.82)), 7) \
+  .where(dNBR.gte(0.82), 8) \
+
+dNBR_classified_params = {
+  'min': 1,
+  'max': 7,
+  'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
+}
 #################### COMPUTED RASTER LAYERS ####################
 ##### TCI
 m.add_ee_layer(pre_fire_tci, tci_params, 'Sentinel-2 TCI (Pre-fire)')
@@ -100,6 +118,8 @@ m.add_ee_layer(post_fire_NBR, NBR_params, 'Post-Fire NBR')
 ##### Delta NBR
 m.add_ee_layer(dNBR, dNBR_params, 'dNBR')
 m.add_ee_layer(dNBR, dNBR_cr_params, 'dNBR - Burn Severity')
+m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'dNBR Classified')
+
 
 ##### Folium Map Layer Control
 folium.LayerControl(collapsed=False).add_to(m)
