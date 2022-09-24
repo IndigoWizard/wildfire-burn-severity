@@ -56,11 +56,32 @@ tci_params = {
   'gamma': 2
 }
 
+####################  INDECES #################### 
+# ##### NBR (Normalized Burn Ratio)
+# Computing both pre-fire and post-fire NBR data while using the same visual parameters to display both as greyscale
+def get_NBR(image):
+  return image.normalizedDifference(['B8', 'B12'])
+
+pre_fire_NBR = get_NBR(pre_fire.clip(aoi))
+post_fire_NBR = get_NBR(post_fire.clip(aoi))
+
+# NBR visual parameters (applies to both pre/post fire images as greyscale)
+NBR_params = {
+  'min': -1,
+  'max': 1,
+  'palette': ['black', 'white'],
+}
+
+
 #################### COMPUTED RASTER LAYERS ####################
 ##### TCI
 m.add_ee_layer(pre_fire_tci, tci_params, 'Sentinel-2 TCI (Pre-fire)')
-
 m.add_ee_layer(post_fire_tci, tci_params, 'Sentinel-2 TCI (Post-fire)')
+
+##### NBR
+m.add_ee_layer(pre_fire_NBR, NBR_params, 'Pre-Fire NBR')
+m.add_ee_layer(post_fire_NBR, NBR_params, 'Post-Fire NBR')
+
 
 ##### Folium Map Layer Control
 folium.LayerControl(collapsed=False).add_to(m)
