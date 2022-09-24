@@ -7,7 +7,7 @@ import webbrowser
 # ########## Earth Engine Setup
 # Triggering authentification to earth engine services
 # Uncomment then execute only once > auth succecfull > put back as a comment:
-ee.Authenticate()
+#ee.Authenticate()
 
 # initializing the earth engine library
 ee.Initialize()
@@ -33,6 +33,36 @@ basemap2 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
 basemap2.add_to(m)
 
 
+
+#################### IMAGERY ANALYSIS ####################
+# Area of Interest
+aoi = ee.Geometry.Point([2.34059, 36.614425]).buffer(7500)
+
+# Sentinel-2 L2A: August 12th 2022 - Pre-fire
+pre_fire = ee.Image('COPERNICUS/S2_SR/20220812T103031_20220812T103132_T31SDA')
+
+# Sentinel-2 L2A: August 20th 2022 - Post-fire
+post_fire = ee.Image('COPERNICUS/S2_SR/20220820T103629_20220820T104927_T31SDA')
+
+# True Color Image (TCI) 
+pre_fire_tci = pre_fire.clip(aoi).divide(10000)
+post_fire_tci = post_fire.clip(aoi).divide(10000)
+
+# TCI visual parameters
+tci_params = {
+  'bands': ['B4',  'B3',  'B2'],
+  'min': 0,
+  'max': 1,
+  'gamma': 2
+}
+
+#################### COMPUTED RASTER LAYERS ####################
+##### TCI
+m.add_ee_layer(pre_fire_tci, tci_params, 'Sentinel-2 TCI (Pre-fire)')
+
+m.add_ee_layer(post_fire_tci, tci_params, 'Sentinel-2 TCI (Post-fire)')
+
+##### Folium Map Layer Control
 folium.LayerControl(collapsed=False).add_to(m)
 
 #################### Generating map file #################### 
