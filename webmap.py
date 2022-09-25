@@ -1,6 +1,7 @@
 import ee
 from ee import image
 import folium
+import geemap
 import webbrowser
 
 #################### Earth Engine Configuration #################### 
@@ -106,6 +107,19 @@ dNBR_classified_params = {
   'max': 7,
   'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
 }
+
+dNBR_classified_masked = dNBR_classified.updateMask(dNBR_classified.gte(4))
+
+#################### Custom Visual Displays ####################
+dem = ee.Image('CGIAR/SRTM90_V4').clip(aoi)
+contours = geemap.create_contours(dem, 0, 905, 20, region=aoi)
+contours_params = {
+  'min': 0,
+  'max': 1000,
+  'palette': ['#440044', '#00FFFF', '#00FFFF', '#00FFFF'],
+  'opacity': 0.8
+}
+
 #################### COMPUTED RASTER LAYERS ####################
 ##### TCI
 m.add_ee_layer(pre_fire_tci, tci_params, 'Sentinel-2 TCI (Pre-fire)')
@@ -118,8 +132,10 @@ m.add_ee_layer(post_fire_NBR, NBR_params, 'Post-Fire NBR')
 ##### Delta NBR
 m.add_ee_layer(dNBR, dNBR_params, 'dNBR')
 m.add_ee_layer(dNBR, dNBR_cr_params, 'dNBR - Burn Severity')
-m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'dNBR Classified')
+m.add_ee_layer(dNBR_classified_masked, dNBR_classified_params, 'Burned Surface Area')
 
+##### Contours
+m.add_ee_layer(contours, contours_params, 'Contour lines')
 
 ##### Folium Map Layer Control
 folium.LayerControl(collapsed=False).add_to(m)
