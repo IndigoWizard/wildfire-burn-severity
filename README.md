@@ -1,4 +1,5 @@
 # wildfire-burn-severity
+Webapp link: [Wlidfire Burn Severity project](https://indigowizard.github.io/wildfire-burn-severity/webmap.html)
 
 ## Project description:
 A GEE project that aims to generate a burn severity map to assess surface areas affected by wildfires. The project relyes on **Normalized Burn Ratio (NBR)** to highlight the affected areas and estimate burn severity levels.

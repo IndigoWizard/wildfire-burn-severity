@@ -55,8 +55,8 @@ post_fire_tci = post_fire.clip(aoi).divide(10000)
 tci_params = {
   'bands': ['B4',  'B3',  'B2'],
   'min': 0,
-  'max': 1,
-  'gamma': 2
+  'max': 0.3,
+  'gamma': 0.8
 }
 
 ####################  INDECES #################### 
