@@ -3,6 +3,8 @@ from ee import image
 import folium
 import geemap
 import webbrowser
+# importing aos.py that contains the "AOS" variable with long geojson
+import aos
 
 #################### Earth Engine Configuration #################### 
 # ########## Earth Engine Setup
@@ -33,11 +35,11 @@ m = folium.Map(location = [36.606500, 2.352500], tiles='OpenStreetMap', zoom_sta
 basemap2 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
 basemap2.add_to(m)
 
-
-
 #################### IMAGERY ANALYSIS ####################
 # Area of Interest
-aoi = ee.Geometry.Point([2.34059, 36.614425]).buffer(7500)
+# fetching the aos (area of study) variable from roi.py where the very long geojson is strored as to not occupy a lot of space in this main webmap.py file
+#aoi = ee.Geometry.Point([2.34059, 36.614425]).buffer(7500)
+aoi = aos.aos
 
 # Sentinel-2 L2A: August 12th 2022 - Pre-fire
 pre_fire = ee.Image('COPERNICUS/S2_SR/20220812T103031_20220812T103132_T31SDA')
