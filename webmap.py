@@ -1,6 +1,7 @@
 import ee
 from ee import image
 import folium
+from branca.element import Template, MacroElement
 import geemap
 import webbrowser
 # importing aos.py that contains the "AOS" variable with long geojson
@@ -114,13 +115,115 @@ dNBR_classified_masked = dNBR_classified.updateMask(dNBR_classified.gte(4))
 
 #################### Custom Visual Displays ####################
 dem = ee.Image('CGIAR/SRTM90_V4').clip(aoi)
-contours = geemap.create_contours(dem, 0, 905, 20, region=aoi)
+contours = geemap.create_contours(dem, 0, 905, 25, region=aoi)
 contours_params = {
   'min': 0,
   'max': 1000,
   'palette': ['#440044', '#00FFFF', '#00FFFF', '#00FFFF'],
-  'opacity': 0.8
+  'opacity': 0.3
 }
+
+
+#################### MAP LEGEND ####################
+
+legend_setup = """
+{% macro html(this, kwargs) %}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="index,follow,max-image-preview:large" />
+        <title>Wildfire Burn Severity Analysis</title>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <link rel="stylesheet" href="src/ui.css">
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+        <script>
+            $(function() {
+                $("#ui-container, #title-container, #project-container").draggable({
+                    start: function(event, ui) {
+                        $(this).css({
+                            right: "auto",
+                            top: "auto",
+                            bottom: "auto"
+                        });
+                    }
+                });
+            });
+        </script>
+    </head>
+
+  <body>
+  <div class="ui-container" id="title-container">
+    <div class="map-title">
+      <p>Wildfire Burn Severity Analysis</p>
+    </div>
+  </div>
+
+  <div id="ui-container" class="ui-container">
+
+        <div class="project-source">
+          <div class="project-logo">
+              <a href="https://github.com/IndigoWizard/mega-port-environment/tree/develop" title="Go to repository" target="_blank">
+                <i class="fa fa-github" aria-hidden="true" id="icons"></i>
+              </a>
+          </div>
+
+          <div class="project-info">
+            <a href="https://github.com/IndigoWizard/wildfire-burn-severity" title="Go to repository" target="_blank"><p  class="project-link"  id="icons">IndigoWizard/mega-port-environment</p></a>
+            <div class="project-stats">
+              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/" target="_blank"><i class="fa fa-link" aria-hidden="true" id="icons"><span class="ghtext"> Check it!</span></i></a>
+              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/stargazers" target="_blank"><i class="fa fa-star" aria-hidden="true" id="icons"><span class="ghtext"> Star it!</span></i></a>
+              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/network/members" target="_blank"><i class="fa fa-code-fork" aria-hidden="true" id="icons"><span class="ghtext"> Fork it!</span></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="leaflet-control-layers-separator"></div>
+
+      <div class='legend-title'>Legend</div>
+
+      <div class="index-container">
+
+        <div class='legend-scale' id="dNBR">
+            <h4>Classified dNBR</h4>
+            <ul class='legend-labels'>
+              <li><span style='background:#902cd6;opacity:0.8;'></span>High Severity Burns</li>
+              <li><span style='background:#e86c4e;opacity:0.8;'></span>Moderate-High Severity Burns</li>
+              <li><span style='background:#f7a769;opacity:0.8;'></span>Moderate-Low Severity Burns</li>
+              <li><span style='background:#f8ebb0;opacity:0.8;'></span>Low Severity Burns</li>
+              <li><span style='background:#a1d574;opacity:0.8;'></span>Unburned</li>
+              <li><span style='background:#2aae29;opacity:0.8;'></span>Enhanced Regrowth (Low)</li>
+              <li><span style='background:#1c742c;opacity:0.8;'></span>Enhanced Regrowth (High)</li>
+            </ul>
+        </div>
+
+        <div class="index-gradient">
+
+          <div class="index-gradient-container">
+            <div class='legend-scale' id="NBRGS">
+              <h4>NBR Greyscale</h4>
+              <ul class='legend-labels'>
+                <li id="greyscale">-1<span id="nbr-greyscale"></span>1</li>
+              </ul>
+          </div>
+        </div>
+
+      </div>
+  </div>
+
+  </body>
+</html>
+{% endmacro %}
+"""
+# configuring the legend
+legend = MacroElement()
+legend._template = Template(legend_setup)
+
+# adding legend to the map
+m.get_root().add_child(legend)
 
 #################### COMPUTED RASTER LAYERS ####################
 ##### TCI
@@ -134,6 +237,7 @@ m.add_ee_layer(post_fire_NBR, NBR_params, 'Post-Fire NBR')
 ##### Delta NBR
 m.add_ee_layer(dNBR, dNBR_params, 'dNBR')
 m.add_ee_layer(dNBR, dNBR_cr_params, 'dNBR - Burn Severity')
+m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'Classified dNBR')
 m.add_ee_layer(dNBR_classified_masked, dNBR_classified_params, 'Burned Surface Area')
 
 ##### Contours
