@@ -80,7 +80,7 @@ NBR_params = {
 dNBR = pre_fire_NBR.subtract(post_fire_NBR)
 # dNBR isual parameters for greyscale styling
 dNBR_params = {
-  'min' : -0.12,
+  'min': -0.12,
   'max': 0.82,
   'palette': ['black', 'white']
 }
@@ -204,29 +204,33 @@ legend_setup = """
 
         <div class="leaflet-control-layers-separator"></div>
 
-      <div class='legend-title'>Legend</div>
+      <div class="legend-title">Legend</div>
 
       <div class="index-container">
-
-        <div class='legend-scale' id="dNBR">
-            <h4>Classified dNBR</h4>
-            <ul class='legend-labels'>
-              <li><span style='background:#902cd6;opacity:0.8;'></span>High Severity Burns</li>
-              <li><span style='background:#e86c4e;opacity:0.8;'></span>Moderate-High Severity Burns</li>
-              <li><span style='background:#f7a769;opacity:0.8;'></span>Moderate-Low Severity Burns</li>
-              <li><span style='background:#f8ebb0;opacity:0.8;'></span>Low Severity Burns</li>
-              <li><span style='background:#a1d574;opacity:0.8;'></span>Unburned</li>
-              <li><span style='background:#2aae29;opacity:0.8;'></span>Enhanced Regrowth (Low)</li>
-              <li><span style='background:#1c742c;opacity:0.8;'></span>Enhanced Regrowth (High)</li>
+        <div class="legend-scale" id="VECTOR">
+          <ul class="legend-labels">
+            <li><span style="background:#5555552e;opacity:0.8;border: solid 2px #87043b;"></span>Burn Scar Zone.</li>
+          </ul>
+        </div>
+        <div class="legend-scale" id="dNBR">
+            <h4>dNBR Classes - Burn Severity Levels</h4>
+            <ul class="legend-labels">
+              <li><span style="background:#902cd6;opacity:0.8;"></span>High Severity Burns</li>
+              <li><span style="background:#e86c4e;opacity:0.8;"></span>Moderate-High Severity Burns</li>
+              <li><span style="background:#f7a769;opacity:0.8;"></span>Moderate-Low Severity Burns</li>
+              <li><span style="background:#f8ebb0;opacity:0.8;"></span>Low Severity Burns</li>
+              <li><span style="background:#a1d574;opacity:0.8;"></span>Unburned</li>
+              <li><span style="background:#2aae29;opacity:0.8;"></span>Enhanced Regrowth (Low)</li>
+              <li><span style="background:#1c742c;opacity:0.8;"></span>Enhanced Regrowth (High)</li>
             </ul>
         </div>
 
         <div class="index-gradient">
 
           <div class="index-gradient-container">
-            <div class='legend-scale' id="NBRGS">
+            <div class="legend-scale" id="NBRGS">
               <h4>NBR Greyscale</h4>
-              <ul class='legend-labels'>
+              <ul class="legend-labels">
                 <li id="greyscale">-1<span id="nbr-greyscale"></span>1</li>
               </ul>
           </div>
