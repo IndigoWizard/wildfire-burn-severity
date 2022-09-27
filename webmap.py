@@ -11,7 +11,7 @@ import aos
 # ########## Earth Engine Setup
 # Triggering authentification to earth engine services
 # Uncomment then execute only once > auth succecfull > put back as a comment:
-#ee.Authenticate()
+ee.Authenticate()
 
 # initializing the earth engine library
 ee.Initialize()
@@ -155,6 +155,10 @@ legend_setup = """
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="index,follow,max-image-preview:large" />
+        <meta name="keywords" content="wildfire, forest fire, earth engine, google earth engine, gee, remote sensing, normalized burn ratio, burn severity,, satellite imagery, sentinel-2, proejcts, folium, github pages, github, linkedin, environmental studies, forest fire analysis, wildfire analysis">
+        <meta name="description" content="Wildfire Burn Severity Anlasysis by Ahmed Islem Mokhtari">
+        <meta property="og:image" content="https://www.pixenli.com/image/9UOYFbtC">
+        <link rel="image_src" href="https://www.pixenli.com/image/9UOYFbtC">
         <title>Wildfire Burn Severity Analysis</title>
         <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
         <link rel="stylesheet" href="src/ui.css">
