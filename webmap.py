@@ -31,7 +31,7 @@ def add_ee_layer(self, ee_image_object, vis_params, name):
 folium.Map.add_ee_layer = add_ee_layer
 
 #################### MAIN MAP ####################
-m = folium.Map(location = [36.606500, 2.352500], tiles='OpenStreetMap', zoom_start = 12, control_scale = True)
+m = folium.Map(location = [36.606500, 2.32400], tiles='OpenStreetMap', zoom_start = 13, control_scale = True)
 
 basemap2 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
 basemap2.add_to(m)
@@ -60,7 +60,7 @@ tci_params = {
   'gamma': 0.8
 }
 
-####################  INDECES #################### 
+####################  Remote Sensing Index #################### 
 # ##### NBR (Normalized Burn Ratio)
 # Computing both pre-fire and post-fire NBR data while using the same visual parameters to display both as greyscale
 def get_NBR(image):
@@ -93,8 +93,8 @@ dNBR_cr_params = {
 }
 
 # ########## ANALYSIS RESULTS CLASSIFICATION
-# ##### NDVI classification: 7 classes
 
+# ##### NBR classification
 dNBR_classified = ee.Image(dNBR) \
   .where(dNBR.gte(-0.12).And(dNBR.lt(0)), 1) \
   .where(dNBR.gte(0).And(dNBR.lt(0.1)), 2) \
@@ -105,13 +105,35 @@ dNBR_classified = ee.Image(dNBR) \
   .where(dNBR.gte(0.66).And(dNBR.lt(0.82)), 7) \
   .where(dNBR.gte(0.82), 8) \
 
+# Storing the classes with a different variable with the same intent
+# as to no be affected by the necessary changes imposed on the dNBR_classified variable later
+dNBR_classes = dNBR_classified
+
 dNBR_classified_params = {
   'min': 1,
   'max': 7,
   'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
 }
 
-dNBR_classified_masked = dNBR_classified.updateMask(dNBR_classified.gte(4))
+##### Testing raster conversion to vector
+# Define arbitrary thresholds on the classified dNBR image.
+dNBR_classified = dNBR_classified.gte(4)
+dNBR_classified = dNBR_classified.updateMask(dNBR_classified.neq(0))
+
+# Convert the zones of the thresholded burn areas to vectors.
+vectors = dNBR_classified.addBands(dNBR_classified).reduceToVectors(
+  **{
+  'geometry': aoi,
+  'crs': dNBR_classified.projection(),
+  'scale': 10,
+  'geometryType': 'polygon',
+  'eightConnected': False,
+  'labelProperty': 'zone',
+  'reducer': ee.Reducer.mean()
+})
+# Burn scar based on converted rasters to vectors> Is displayed as its own layer
+burn_scar = ee.Image(0).updateMask(0).paint(vectors, '000000', 2)
+
 
 #################### Custom Visual Displays ####################
 dem = ee.Image('CGIAR/SRTM90_V4').clip(aoi)
@@ -122,7 +144,6 @@ contours_params = {
   'palette': ['#440044', '#00FFFF', '#00FFFF', '#00FFFF'],
   'opacity': 0.3
 }
-
 
 #################### MAP LEGEND ####################
 
@@ -237,11 +258,15 @@ m.add_ee_layer(post_fire_NBR, NBR_params, 'Post-Fire NBR')
 ##### Delta NBR
 m.add_ee_layer(dNBR, dNBR_params, 'dNBR')
 m.add_ee_layer(dNBR, dNBR_cr_params, 'dNBR - Burn Severity')
-m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'Classified dNBR')
-m.add_ee_layer(dNBR_classified_masked, dNBR_classified_params, 'Burned Surface Area')
+m.add_ee_layer(dNBR_classes, dNBR_classified_params, 'dNBR Classes')
+
+##### Vector layers
+##### Burn Scar
+m.add_ee_layer(burn_scar, {'palette': '000000'}, 'Burn Scar')
 
 ##### Contours
 m.add_ee_layer(contours, contours_params, 'Contour lines')
+
 
 ##### Folium Map Layer Control
 folium.LayerControl(collapsed=False).add_to(m)
