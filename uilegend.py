@@ -7,8 +7,11 @@ uilegend = """
         <meta name="keywords" content="wildfire, forest fire, earth engine, google earth engine, gee, remote sensing, normalized burn ratio, burn severity,, satellite imagery, sentinel-2, proejcts, folium, github pages, github, linkedin, environmental studies, forest fire analysis, wildfire analysis">
         <meta property="og:description" content="Wildfire Burn Severity Anlasysis by Ahmed Islem Mokhtari">
         <meta property="og:title" content="Wildfire Burn Severity Anlasysis"/>
-        <meta property="og:image" content="https://www.pixenli.com/image/9UOYFbtC">
-        <link rel="image_src" href="https://www.pixenli.com/image/9UOYFbtC">
+        <meta property="og:image" content="https://www.pixenli.com/image/UR4xqOb1">
+        <link rel="image_src" href="https://www.pixenli.com/image/UR4xqOb1">
+        <meta itemprop="image" content="https://www.pixenli.com/image/UR4xqOb1">
+        <meta itemprop="thumbnailUrl" content="https://www.pixenli.com/image/UR4xqOb1">
+        <meta name="linkedin:image" content="https://www.your-website.com/open-graph.jpg">
         <meta property="og:url" content="https://indigowizard.github.io/wildfire-burn-severity/webmap.html"/>
         <title>Wildfire Burn Severity Analysis</title>
         <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
