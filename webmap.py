@@ -4,7 +4,7 @@ import folium
 from branca.element import Template, MacroElement
 import geemap
 import webbrowser
-# importing aos.py that contains the "AOS" variable with long geojson
+# importing separate code files from root folder
 import aos
 import uilegend
 
@@ -37,15 +37,6 @@ m = folium.Map(location = [36.606500, 2.32400], tiles='OpenStreetMap', zoom_star
 
 basemap2 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
 basemap2.add_to(m)
-
-#################### MAP LEGEND ####################
-legend_setup = uilegend.uilegend
-legend = MacroElement()
-legend._template = Template(legend_setup)
-
-# adding legend to the map
-m.get_root().add_child(legend)
-
 
 #################### IMAGERY ANALYSIS ####################
 # Area of Interest
@@ -155,6 +146,14 @@ contours_params = {
   'palette': ['#440044', '#00FFFF', '#00FFFF', '#00FFFF'],
   'opacity': 0.3
 }
+
+#################### MAP LEGEND ####################
+legend_setup = uilegend.uilegend
+legend = MacroElement()
+legend._template = Template(legend_setup)
+
+# adding legend to the map
+m.get_root().add_child(legend)
 
 #################### COMPUTED RASTER LAYERS ####################
 ##### TCI
