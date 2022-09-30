@@ -19,6 +19,7 @@ If you want to fork and work on the project, you need the following:
 1. To use this script, you must first [sign up](https://earthengine.google.com/signup/) for a [Google Earth Engine](https://earthengine.google.com/) account.
 2. Install [gcloud CLI](https://cloud.google.com/cli) for the Google Earth Engine account authentication.
 3. Install the rest of project dependencies from `requirement.txt` file, just run:
+
 `conda install --file requirements.txt`
 > use python 3.9 and up.
 
