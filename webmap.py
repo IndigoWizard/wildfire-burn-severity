@@ -13,7 +13,7 @@ import uilegend
 # Triggering authentification to earth engine services
 # Uncomment then execute only once > auth succecfull > put back as a comment:
 
-#ee.Authenticate()
+ee.Authenticate()
 
 # initializing the earth engine library
 ee.Initialize()
