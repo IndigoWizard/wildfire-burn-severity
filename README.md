@@ -13,7 +13,7 @@ The project uses Google Earth Engine python api, combined with folium and geemap
 
 ### Preview
 
-![](https://gifyu.com/image/S990Z)
+![wildfire burn severity analysis](src/wildfire-burn-severity-analysis.gif)
 
 ### User guide
 End users can navigate to the web page and access the results easily: [Burn Severity Analysis](https://indigowizard.github.io/wildfire-burn-severity/webmap.html)
