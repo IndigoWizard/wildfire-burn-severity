@@ -11,6 +11,10 @@ For more details on this wildfire, read the related medium article: [Mt Chenoua 
 ### Info:
 The project uses Google Earth Engine python api, combined with folium and geemap to render the map, calculate the index ratio and compute raster data results.
 
+### Preview
+
+![Wildfire Burn Severity Analysis](https://gifyu.com/image/S990Z)
+
 ### User guide
 End users can navigate to the web page and access the results easily: [Burn Severity Analysis](https://indigowizard.github.io/wildfire-burn-severity/webmap.html)
 
