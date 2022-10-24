@@ -13,7 +13,7 @@ import uilegend
 # Triggering authentification to earth engine services
 # Uncomment then execute only once > auth succecfull > put back as a comment:
 
-ee.Authenticate()
+#ee.Authenticate()
 
 # initializing the earth engine library
 ee.Initialize()
@@ -33,9 +33,10 @@ def add_ee_layer(self, ee_image_object, vis_params, name):
 folium.Map.add_ee_layer = add_ee_layer
 
 #################### MAIN MAP ####################
-m = folium.Map(location = [36.606500, 2.32400], tiles='OpenStreetMap', zoom_start = 13, control_scale = True)
-
-basemap2 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
+m = folium.Map(location = [36.606500, 2.32400], tiles=None, zoom_start = 13, control_scale = True)
+basemap1 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
+basemap2 = folium.TileLayer('openstreetmap', name='Open Street Map')
+basemap1.add_to(m)
 basemap2.add_to(m)
 
 #################### IMAGERY ANALYSIS ####################
