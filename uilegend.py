@@ -30,6 +30,9 @@ uilegend = """
                         });
                     }
                 });
+                $(".collapse-this").accordion({
+                  collapsible: true
+                })
             });
         </script>
     </head>
@@ -61,7 +64,7 @@ uilegend = """
         </div>
 
         <div class="leaflet-control-layers-separator"></div>
-
+      <div class="collapse-this">
       <div class="legend-title">Legend</div>
 
       <div class="index-container">
@@ -95,6 +98,8 @@ uilegend = """
         </div>
 
       </div>
+      </div>
   </div>
+  </body>
 {% endmacro %}
 """
