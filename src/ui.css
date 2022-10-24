@@ -1,18 +1,3 @@
-:root {
-	--colorMain: #292a4c;
-	--colorDark: #262843;
-	--colorDarker: #d5d8e6;
-	--colorDarkerUltra: #1c1938;
-	--colorPurple: #865ca4;
-	--colorVariant: #c46198;
-	--colorVariantDark: #a13a82;
-	--colorVariantDark2: #eb2282;
-	--colorVariantVivid: #bc1d33;
-	--colorLightBlue: #17cee2;
-	--textTitle: #e6e6e5;
-	--textMain: #a2b2b8;
-}
-
 .ui-container {
 	position: absolute;
 	z-index: 999;
