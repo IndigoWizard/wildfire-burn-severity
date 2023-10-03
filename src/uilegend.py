@@ -4,7 +4,7 @@ uilegend = """
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="robots" content="index,follow,max-image-preview:large" />
-        <meta name="keywords" content="wildfire, forest fire, earth engine, google earth engine, gee, remote sensing, normalized burn ratio, burn severity,, satellite imagery, sentinel-2, proejcts, folium, github pages, github, linkedin, environmental studies, forest fire analysis, wildfire analysis">
+        <meta name="keywords" content="wildfire, forest fire, earth engine, google earth engine, gee, remote sensing, normalized burn ratio, burn severity, satellite imagery, sentinel-2, proejcts, folium, github pages, github, linkedin, environmental studies, forest fire analysis, wildfire analysis">
         <meta property="og:description" content="Wildfire Burn Severity Anlasysis by Ahmed Islem Mokhtari">
         <meta property="og:title" content="Wildfire Burn Severity Anlasysis using GEE by Ahmed I. Mokhtari"/>
         <meta property="og:image" content="https://www.pixenli.com/image/X0aFtxup">
@@ -14,6 +14,8 @@ uilegend = """
         <meta name="linkedin:image" content="https://www.your-website.com/open-graph.jpg">
         <meta property="og:url" content="https://indigowizard.github.io/wildfire-burn-severity/webmap.html"/>
         <title>Wildfire Burn Severity Analysis</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+        <link rel="stylesheet" href="src/ui.css"
         <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
         <link rel="stylesheet" href="src/ui.css">
         <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
@@ -49,16 +51,16 @@ uilegend = """
         <div class="project-source">
           <div class="project-logo">
               <a href="https://github.com/IndigoWizard/wildfire-burn-severity/tree/dev" title="Go to repository" target="_blank">
-                <i class="fa fa-github" aria-hidden="true" id="icons"></i>
+                <i class="fa-brands fa-github" aria-hidden="true" id="icons"></i>
               </a>
           </div>
 
           <div class="project-info">
             <a href="https://github.com/IndigoWizard/wildfire-burn-severity" title="Go to repository" target="_blank"><p  class="project-link"  id="icons">IndigoWizard/mega-port-environment</p></a>
             <div class="project-stats">
-              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/" target="_blank"><i class="fa fa-link" aria-hidden="true" id="icons"><span class="ghtext"> Check it!</span></i></a>
-              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/stargazers" target="_blank"><i class="fa fa-star" aria-hidden="true" id="icons"><span class="ghtext"> Star it!</span></i></a>
-              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/network/members" target="_blank"><i class="fa fa-code-fork" aria-hidden="true" id="icons"><span class="ghtext"> Fork it!</span></i></a>
+              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/" target="_blank"><i class="fa-solid fa-link" aria-hidden="true" id="icons"><span class="ghtext"> Check it!</span></i></a>
+              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/stargazers" target="_blank"><i class="fa-solid fa-star" aria-hidden="true" id="icons"><span class="ghtext"> Star it!</span></i></a>
+              <a href="https://github.com/IndigoWizard/wildfire-burn-severity/network/members" target="_blank"><i class="fa-solid fa-code-fork" aria-hidden="true" id="icons"><span class="ghtext"> Fork it!</span></i></a>
             </div>
           </div>
         </div>
