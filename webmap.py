@@ -5,15 +5,15 @@ from branca.element import Template, MacroElement
 import geemap
 import webbrowser
 # importing separate code files from root folder
-import aos
-import uilegend
+from src import aos
+from src import uilegend
 
 #################### Earth Engine Configuration #################### 
 # ########## Earth Engine Setup
 # Triggering authentification to earth engine services
 # Uncomment then execute only once > auth succecfull > put back as a comment:
 
-ee.Authenticate()
+#ee.Authenticate()
 
 # initializing the earth engine library
 ee.Initialize()
