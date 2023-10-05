@@ -166,27 +166,26 @@ def main():
             b0.add_to(m)
 
             #### Satellite imagery Processing Section - START
+
             ## Defining and clipping image collections for both dates:
-            # initial Image collection
-            initial_collection = satCollection(cloud_pixel_percentage, str_initial_start_date, str_initial_end_date, geometry_aoi)
-            # updated Image collection
-            updated_collection = satCollection(cloud_pixel_percentage, str_updated_start_date, str_updated_end_date, geometry_aoi)
+            # Pre-fire
+            pre_fire_collection = satCollection(cloud_pixel_percentage, str_initial_start_date, str_initial_end_date, geometry_aoi)
+            # Post-fire
+            post_fire_collection = satCollection(cloud_pixel_percentage, str_updated_start_date, str_updated_end_date, geometry_aoi)
 
             # setting a sat_imagery variable that could be used for various processes later on (tci, NBR... etc)
-            initial_sat_imagery = initial_collection.median()
-            updated_sat_imagery = updated_collection.median()
-
+            pre_fire = pre_fire_collection.median()
+            post_fire = post_fire_collection.median()
 
             ####################  Remote Sensing Index #################### 
 
-            ## TCI (True Color Imagery)
-            # Clipping the image to the area of interest "aoi"
-            pre_fire_tci = initial_sat_imagery
-            post_fire_tci = updated_sat_imagery
+            # Satellite image
+            pre_fire_satImg = pre_fire
+            post_fire_satImg = post_fire
 
-            # TCI image visual parameters
-            tci_params = {
-            'bands': ['B12', 'B11', 'B4'],
+            # Sat image visual parameters
+            satImg_params = {
+            'bands': ['B12',  'B11',  'B4'],
             'min': 0,
             'max': 1,
             'gamma': 1.1
@@ -196,16 +195,13 @@ def main():
             def get_NDWI(image):
                 return image.normalizedDifference(['B3', 'B11'])
 
-            pre_ndwi = get_NDWI(initial_sat_imagery)
-            post_ndwi = get_NDWI(updated_sat_imagery)
-            
-            pre_ndwi = pre_ndwi.updateMask(pre_ndwi.gt(-0.12))
-            post_ndwi = post_ndwi.updateMask(post_ndwi.gt(-0.12))
+            pre_fire_ndwi = get_NDWI(pre_fire)
+            post_fire_ndwi = get_NDWI(post_fire)
 
             ndwi_params = {
             'min': -1,
             'max': 0,
-            'palette': ['#00FFFF', '#0000FF']
+            'palette': ["caf0f8", "00b4d8", "023e8a"]
             }
 
             # NBR (Normalized Burn Ratio)
@@ -213,31 +209,28 @@ def main():
                 return image.normalizedDifference(['B8', 'B12'])
 
             # claculating NBR for pre/post fire
-            pre_fire_NBR = get_NBR(pre_fire_tci)
-            post_fire_NBR = get_NBR(post_fire_tci)
+            pre_fire_NBR = get_NBR(pre_fire_satImg)
+            post_fire_NBR = get_NBR(post_fire_satImg)
 
             # Delta NBR (dNBR)
             dNBR = pre_fire_NBR.subtract(post_fire_NBR)
 
-            # ########## ANALYSIS RESULTS CLASSIFICATION
-            # Masking satellite images over the water to show only land
-            def satImageMask(sat_image):
-                masked_image = sat_image.updateMask(sat_image.gte(0))
-                return masked_image
+            dNBR_params = {
+            'min': -0.5,
+            'max': 1.3,
+            'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
+            }
 
-            # Mask NBR images
-            pre_fire_NBR = satImageMask(pre_fire_NBR)
-            pre_fire_NBR = satImageMask(pre_fire_NBR)
+            img_classifier = dNBR
 
-            # ##### dNBR classification: 8 classes
-            dNBR_classified = ee.Image(dNBR) \
-                .where(dNBR.gte(-0.5).And(dNBR.lt(-0.251)), 1) \
-                .where(dNBR.gte(-0.250).And(dNBR.lt(-0.101)), 2) \
-                .where(dNBR.gte(-0.100).And(dNBR.lt(0.99)), 3) \
-                .where(dNBR.gte(0.100).And(dNBR.lt(0.269)), 4) \
-                .where(dNBR.gte(0.270).And(dNBR.lt(0.439)), 5) \
-                .where(dNBR.gte(0.440).And(dNBR.lt(0.659)), 6) \
-                .where(dNBR.gte(0.660).And(dNBR.lte(1.300)), 7) \
+            dNBR_classified = ee.Image(img_classifier) \
+                .where(img_classifier.gte(-0.5).And(img_classifier.lt(-0.251)), 1) \
+                .where(img_classifier.gte(-0.250).And(img_classifier.lt(-0.101)), 2) \
+                .where(img_classifier.gte(-0.100).And(img_classifier.lt(0.99)), 3) \
+                .where(img_classifier.gte(0.100).And(img_classifier.lt(0.269)), 4) \
+                .where(img_classifier.gte(0.270).And(img_classifier.lt(0.439)), 5) \
+                .where(img_classifier.gte(0.440).And(img_classifier.lt(0.659)), 6) \
+                .where(img_classifier.gte(0.660).And(img_classifier.lte(1.300)), 7) \
 
             # Classified dNBR visual parameters
             dNBR_classified_params = {
@@ -246,21 +239,45 @@ def main():
             'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
             }
 
+            ## Image masking
+            # making the NDWI show only water part on NDWI layer
+            masked_pre_fire_ndwi = pre_fire_ndwi.updateMask(pre_fire_ndwi.gt(-0.12))
+            # post_fire_ndwi = post_fire_ndwi.updateMask(post_fire_ndwi.gt(-0.12))
+
+            # The following masks are not depandant/tied to the masked_pre_fire_ndwi variable/layer
+
+            # Creating a binary mask based on original NDWI: water = black = 0 | land = white = 1
+            binaryMask = pre_fire_ndwi.lt(-0.1)
+
+            # Creating a water mask based on NDWI binarmy mask using the land area (1)
+            waterMask = binaryMask.selfMask()
+
+            ## Clipping raster images to the water mask
+
+            # masked_dNBR = dNBR.updateMask(waterMask)
+            masked_dNBR_classified = dNBR_classified.updateMask(waterMask)
+
             #### Satellite imagery Processing Section - END
 
             ### Layers section - START
             # Check if the initial and updated dates are the same
             if initial_date == updated_date:
-                m.add_ee_layer(post_fire_tci, tci_params, 'Satellite Imagery')
+                m.add_ee_layer(post_fire_satImg, satImg_params, 'Satellite Imagery')
             else:
-                m.add_ee_layer(pre_fire_tci, tci_params, f'Pre-Fire Satellite Imagery: {initial_date}')
-                m.add_ee_layer(post_fire_tci, tci_params, f'Post-Fire Satellite Imagery: {updated_date}')
+                m.add_ee_layer(pre_fire_satImg, satImg_params, f'Pre-Fire Satellite Imagery: {initial_date}')
+                m.add_ee_layer(post_fire_satImg, satImg_params, f'Post-Fire Satellite Imagery: {updated_date}')
 
-                m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'dNBR Classes')
+                # m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'dNBR Classes')
 
-                m.add_ee_layer(pre_ndwi, ndwi_params, f'NDWI: {initial_date}')
+                m.add_ee_layer(masked_pre_fire_ndwi, ndwi_params, f'NDWI: {initial_date}')
+
+                # m.add_ee_layer(updateMask, dNBR_params, 'NBR "_masked')
+                # m.add_ee_layer(binaryMask, {}, 'binaryMask')
+                # m.add_ee_layer(waterMask, {}, 'SelfMak')
+                m.add_ee_layer(masked_dNBR_classified, dNBR_classified_params, 'Reclassified dNBR')
 
             #### Layers section - END
+
 
             #### Map result display - START
             # Folium Map Layer Control: we can see and interact with map layers
@@ -268,7 +285,7 @@ def main():
             # Display the map
             folium_static(m)
 
-    #### Map result display - END
+            #### Map result display - END
 
     ##### Custom Styling
     st.markdown(
