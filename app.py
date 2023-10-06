@@ -306,6 +306,51 @@ def main():
 
             #### Map result display - END
 
+    #### Legend - START
+    with st.container():
+        st.subheader("Map Legend:")
+        col3, col4, col5 = st.columns([1,2,1])
+        ndwi_palette = ["#caf0f8", "#00b4d8", "#023e8a"]
+        dNBR_classified_palette = ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
+        with col3:            
+            # Create an HTML legend for NDVI classes
+            ndvi_legend_html = """
+                <div class="ndvilegend" style="border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); background: rgba(0, 0, 0, 0.05);">
+                    <h5>NDWI</h5>
+                    <div style="display: flex; flex-direction: row; align-items: flex-start; gap: 1rem; width: 100%;">
+                        <div style="width: 30px; height: 200px; background: linear-gradient({0},{1},{2});"></div>
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 200px;">
+                            <span>-1</span>
+                            <span style="align-self: flex-end;">1</span>
+                        </div>
+                    </div>
+                </div>
+            """.format(*ndwi_palette)
+
+            # Display the NDVI legend using st.markdown
+            st.markdown(ndvi_legend_html, unsafe_allow_html=True)
+
+        with col4:            
+            # Create an HTML legend for NDVI classes
+            reclassified_ndvi_legend_html = """
+                <div class="reclassifiedndvi" style="border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); background: rgba(0, 0, 0, 0.05);">
+                    <h5>Reclassified Delta NBR</h5>
+                    <ul style="list-style-type: none; padding: 0;">
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {0};">&#9632;</span> Enhanced Regrowth (High).</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {1};">&#9632;</span> Enhanced Regrowth (Low).</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {2};">&#9632;</span> Unburned.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {3};">&#9632;</span> Low Severity Burns.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {4};">&#9632;</span> Moderate-Low Severity Burns.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {5};">&#9632;</span> Moderate-High Severity Burns.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {6};">&#9632;</span> High Severity Burns.</li>
+                    </ul>
+                </div>
+            """.format(*dNBR_classified_palette)
+
+            # Display the Reclassified NDVI legend using st.markdown
+            st.markdown(reclassified_ndvi_legend_html, unsafe_allow_html=True)
+
+    #### Legend - END
     ##### Custom Styling
     st.markdown(
     """
