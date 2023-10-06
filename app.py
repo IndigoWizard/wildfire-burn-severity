@@ -110,6 +110,25 @@ def main():
     # initiate gee 
     ee_authenticate(token_name="EARTHENGINE_TOKEN")
 
+    # sidebar
+    with st.sidebar:
+        st.title("Wildfire Burn Severity Analysis")
+        st.image("https://cdn-icons-png.flaticon.com/512/7204/7204183.png", width=90)
+        st.subheader("Navigation:")
+        st.markdown(
+            """
+                - [dNBR Map](#ndvi-viewer)
+            """)
+    
+        st.subheader("Contact:")
+        st.markdown("[![LinkedIn](https://static.licdn.com/sc/h/8s162nmbcnfkg7a0k8nq9wwqo)](https://linkedin.com/in/ahmed-islem-mokhtari) [![GitHub](https://github.githubassets.com/favicons/favicon-dark.png)](https://github.com/IndigoWizard) [![Medium](https://miro.medium.com/1*m-R_BkNf1Qjr1YbyOIJY2w.png)](https://medium.com/@Indigo.Wizard/mt-chenoua-forest-fires-analysis-with-remote-sensing-614681f468e9)")
+
+        st.caption("ʕ •ᴥ•ʔ Star⭐the [project on GitHub](https://github.com/IndigoWizard/NDVI-Viewer/)!")
+
+    with st.container():
+        st.title("Wildfire Burn Severity Analysis")
+        st.markdown("**Evaluate Wildfire Burn Severity through NBR Analysis: Assess the Impact of Wildfires by Comparing NBR Index Values Using Sentinel-2 Satellite Images!**")
+
     #### User input section - START
     # columns for input - map
     c1, c2 = st.columns([3, 1])
