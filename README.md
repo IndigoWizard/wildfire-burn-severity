@@ -1,6 +1,6 @@
 # wildfire-burn-severity
 
-Webapp link: [Wlidfire Burn Severity project](https://indigowizard.github.io/wildfire-burn-severity/webmap.html)
+Webapp link: [Wlidfire Burn Severity project](https://indigowizard.github.io/wildfire-burn-severity/)
 
 Open for contribution! (I see you, **Hacktoberfest** enthusiasts 👀). Consider ⭐ starring the project ʕ •ᴥ•ʔ ... ʕ　·ᴥ·ʔ
 
@@ -26,7 +26,7 @@ For more details on this wildfire, read the related medium article: [Mt Chenoua 
 
 ### User guide
 
-End users can navigate to the web page and access the results easily: [Burn Severity Analysis](https://indigowizard.github.io/wildfire-burn-severity/webmap.html)
+End users can navigate to the web page and access the results easily: [Burn Severity Analysis](https://indigowizard.github.io/wildfire-burn-severity/)
 
 If you want to fork and work on the project, you need the following:
 
