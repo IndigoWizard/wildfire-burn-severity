@@ -34,8 +34,8 @@ folium.Map.add_ee_layer = add_ee_layer
 
 #################### MAIN MAP ####################
 m = folium.Map(location = [36.606500, 2.32400], tiles=None, zoom_start = 13, control_scale = True)
-basemap1 = folium.TileLayer('cartodbdark_matter', name='Dark Matter')
-basemap2 = folium.TileLayer('openstreetmap', name='Open Street Map')
+basemap1 = folium.TileLayer('Cartodb dark_matter', name='Dark Matter', attr="Dark Matter")
+basemap2 = folium.TileLayer('openstreetmap', name='Open Street Map', attr="OSM", show=False)
 basemap1.add_to(m)
 basemap2.add_to(m)
 
@@ -184,7 +184,7 @@ folium.LayerControl(collapsed=False).add_to(m)
 #################### Generating map file #################### 
 
 # Generating a file for the map and setting it to open on default browser
-m.save('webmap.html')
+m.save('index.html')
 
 # Opening the map file in default browser on execution
-webbrowser.open('webmap.html')
+webbrowser.open('index.html')
