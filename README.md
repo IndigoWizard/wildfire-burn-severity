@@ -2,7 +2,7 @@
 
 Webapp link: [Wlidfire Burn Severity project](https://indigowizard.github.io/wildfire-burn-severity/webmap.html)
 
-Open for contribution! (I see you, **Hacktoberfest** enthousiasts 👀). Consider ⭐ starring the project ʕ •ᴥ•ʔ ... ʕ　·ᴥ·ʔ
+Open for contribution! (I see you, **Hacktoberfest** enthusiasts 👀). Consider ⭐ starring the project ʕ •ᴥ•ʔ ... ʕ　·ᴥ·ʔ
 
 **IMPORTANT NOTE:** :warning:
 
@@ -17,7 +17,7 @@ The project uses [Google Earth Engine Python API](https://anaconda.org/conda-for
 
 ### Use-case:
 
-The wildifre that erupted in Mount Chenoua, Tipaza, Algeria on August 14th-16th 2022 is used as main use-case.
+The wildfire that erupted in Mount Chenoua, Tipaza, Algeria on August 14th-16th 2022 is used as main use-case.
 For more details on this wildfire, read the related medium article: [Mt Chenoua Forest Fires Analysis with Remote Sensing.](https://medium.com/@Indigo.Wizard/mt-chenoua-forest-fires-analysis-with-remote-sensing-614681f468e9)
 
 ### Preview
