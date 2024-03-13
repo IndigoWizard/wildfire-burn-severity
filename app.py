@@ -70,7 +70,6 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
 
 # Upload function
 last_uploaded_centroid = None
-
 def upload_files_proc(upload_files):
     # A global variable to track the latest geojson uploaded
     global last_uploaded_centroid
@@ -143,41 +142,42 @@ def main():
 
     #### User input section - START
     # columns for input - map
-    c1, c2 = st.columns([3, 1])
+    with st.form("input_form"):
+        c1, c2 = st.columns([3, 1])
 
-    with st.container():
-        with c2:
-        ## Cloud coverage input
-            st.info("Cloud Coverage 🌥️")
-            cloud_pixel_percentage = st.slider(label="cloud pixel rate", min_value=5, max_value=100, step=5, value=75 , label_visibility="collapsed")
+        with st.container():
+            with c2:
+            ## Cloud coverage input
+                st.info("Cloud Coverage 🌥️")
+                cloud_pixel_percentage = st.slider(label="cloud pixel rate", min_value=5, max_value=100, step=5, value=75 , label_visibility="collapsed")
 
-        ## File upload
-            # User input GeoJSON file
-            st.info("Upload Area Of Interest file:")
-            upload_files = st.file_uploader("Crete a GeoJSON file at: [geojson.io](https://geojson.io/)", accept_multiple_files=True)
-            # calling upload files function
-            geometry_aoi = upload_files_proc(upload_files)
+            ## File upload
+                # User input GeoJSON file
+                st.info("Upload Area Of Interest file:")
+                upload_files = st.file_uploader("Crete a GeoJSON file at: [geojson.io](https://geojson.io/)", accept_multiple_files=True)
+                # calling upload files function
+                geometry_aoi = upload_files_proc(upload_files)
 
 
-    with st.container():
-        ## Time range input
-        with c1:
-            col1, col2 = st.columns(2)
-            col1.warning("Pre-Fire NBR Date 📅")
-            initial_date = col1.date_input("initial", datetime(2023, 7, 12), label_visibility="collapsed")
+        with st.container():
+            ## Time range input
+            with c1:
+                col1, col2 = st.columns(2)
+                col1.warning("Pre-Fire NBR Date 📅")
+                initial_date = col1.date_input("initial", datetime(2023, 7, 12), label_visibility="collapsed")
 
-            col2.success("Post-Fire NBR Date 📅")
-            updated_date = col2.date_input("updated", datetime(2023, 7, 27), label_visibility="collapsed")
+                col2.success("Post-Fire NBR Date 📅")
+                updated_date = col2.date_input("updated", datetime(2023, 7, 27), label_visibility="collapsed")
 
-            time_range = 7
+                time_range = 7
 
-            # Process initial date
-            str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
+                # Process initial date
+                str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
 
-            # Process updated date
-            str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
-    
-    #### User input section - END
+                # Process updated date
+                str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
+        
+        #### User input section - END
 
             #### Map section - START
             global last_uploaded_centroid
@@ -311,12 +311,17 @@ def main():
 
             #### Layers section - END
 
-
             #### Map result display - START
             # Folium Map Layer Control: we can see and interact with map layers
             folium.LayerControl(collapsed=True).add_to(m)
             # Display the map
-            folium_static(m)
+        submitted = c2.form_submit_button("Generate map")
+        if submitted:
+            with c1:
+                folium_static(m)
+        else:
+            with c1:
+                folium_static(m)
 
             #### Map result display - END
 
