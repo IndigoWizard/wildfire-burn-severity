@@ -290,6 +290,26 @@ def main():
             # masked_dNBR = dNBR.updateMask(waterMask)
             masked_dNBR_classified = dNBR_classified.updateMask(waterMask)
 
+            ### Burn scar area - vector
+            # Define arbitrary thresholds on the classified dNBR image.
+            dNBR_classified = dNBR_classified.gte(4)
+            dNBR_classified = dNBR_classified.updateMask(dNBR_classified.neq(0))
+
+            # Convert the zones of the thresholded burn areas to vectors.
+            vectors = dNBR_classified.addBands(dNBR_classified).reduceToVectors(
+                **{
+                    'geometry': geometry_aoi,
+                    'crs': dNBR_classified.projection(),
+                    'scale': 10,
+                    'geometryType': 'polygon',
+                    'eightConnected': False,
+                    'labelProperty': 'zone',
+                    'reducer': ee.Reducer.mean(),
+                    'bestEffort': True
+                })
+            # Burn scar based on converted rasters to vectors> Is displayed as its own layer
+            burn_scar = ee.Image(0).updateMask(0).paint(vectors, '000000', 2)
+
             #### Satellite imagery Processing Section - END
 
             ### Layers section - START
@@ -308,6 +328,7 @@ def main():
                 # m.add_ee_layer(binaryMask, {}, 'binaryMask')
                 # m.add_ee_layer(waterMask, {}, 'SelfMak')
                 m.add_ee_layer(masked_dNBR_classified, dNBR_classified_params, 'Reclassified dNBR')
+                m.add_ee_layer(burn_scar, {'palette': '#87043b'}, 'Burn Scar')
 
             #### Layers section - END
 
