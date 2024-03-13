@@ -18,7 +18,7 @@ This project is available in two distinct versions:
 
 The Streamlit app is the primary focus of this repository and can be accessed at the main [`streamlit-app branch`](https://github.com/IndigoWizard/wildfire-burn-severity/tree/streamlit-app): It offers an intuitive web-based interface, allowing users to effortlessly analyze wildfire burn severity. No Google Earth Engine account or complex setup is required. Simply visit the link and input your parameters to view the results interactively.
 
-**Folium App:** https://indigowizard.github.io/wildfire-burn-severity/webmap.html
+**Folium App:** https://indigowizard.github.io/wildfire-burn-severity/
 
 The original Python script version of the project resides in the [`folium-app branch`](https://github.com/IndigoWizard/wildfire-burn-severity/tree/folium-app). While this version involves running a Python script, it offers more control over code customization. This branch allows for manual customization but requires users to set up their dev environment and make adjustments to match their specific area of interest. **It is not maintained.**
 
