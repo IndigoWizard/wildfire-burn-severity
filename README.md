@@ -1,13 +1,12 @@
 # wildfire-burn-severity
 
-Webapp link: [Wlidfire Burn Severity project](https://indigowizard.github.io/wildfire-burn-severity/)
+Web App link: [Wlidfire Burn Severity project](https://indigowizard.github.io/wildfire-burn-severity/)
 
-Open for contribution! (I see you, **Hacktoberfest** enthusiasts 👀). Consider ⭐ starring the project ʕ •ᴥ•ʔ ... ʕ　·ᴥ·ʔ
+Open for contribution! Consider ⭐ starring the project
 
 **IMPORTANT NOTE:** :warning:
 
-The Earth Engine token **expires after few days**, so after this, the layers won't show up and the webapp may seem like not working, it's not, it's just that I don't update the token from my personal google earth engine account unless you need a live demo, otherwise check the preview section.
-
+The Earth Engine token **expires after few days**, so after this the Earth Engine layers won't be rendered; The app still works, I just need to update the token from my personal google earth engine account, which I dont do often so unless you need a live demo I wont update it, otherwise check the preview section.
 
 ## Project description:
 
@@ -54,7 +53,7 @@ post_fire = ee.Image('COPERNICUS/S2_SR/20220820T103629_20220820T104927_T31SDA')
 
 You can use [GeoJson.io](https://geojson.io/) to draw your polygon than copy/past **only the coordinates** into the code, not the full GeoJSON (Google Earth Engine at this current time don't take GeoJSON files as a geometry input, so you can't link/access/read a local GeoJSON file).
 
-To change the area of interest (AOS) go to **[aos.py](https://github.com/IndigoWizard/wildfire-burn-severity/blob/main/aos.py)** file and put the coordinates of your area of interest, e.g;
+To change the area of interest (AOS) go to **[aos.py](https://github.com/IndigoWizard/wildfire-burn-severity/blob/folium-app/src/aos.py)** file and put the coordinates of your area of interest, e.g;
 
 ```python
 import ee
@@ -67,7 +66,7 @@ aos = ee.Geometry.Polygon([
 ])
 ```
 
-Your Area Of Study (AOS) **must** be a polygon geometry, not a polyline or a single point as you are studying a specific surface area affected by wildfires. Avoid water surfaces.
+Your Area Of Study (AOS) **must** be a polygon geometry, not a polyline or a single point as you are studying a specific surface area affected by wildfires. Avoid water surfaces for more accurate results.
 
 
 #### Credit
