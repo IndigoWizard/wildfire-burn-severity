@@ -116,6 +116,27 @@ def date_input_proc(input_date, time_range):
     str_end_date = end_date.strftime('%Y-%m-%d')
     return str_start_date, str_end_date
 
+# Raster Area calculation function
+def calculate_class_area(classified_image, geometry_aoi, class_value):
+    class_pixel_area = classified_image.eq(class_value).multiply(ee.Image.pixelArea())
+    class_area = class_pixel_area.reduceRegion(
+        reducer=ee.Reducer.sum(),
+        geometry=geometry_aoi,
+        scale=10,
+        maxPixels=1e12
+    )
+    area_value = class_area.getInfo()
+    return area_value.get(list(area_value.keys())[0], 0)  # Get the value dynamically
+
+# Geojson Area calculation function
+def geojson_area(aoi):
+    # geojson area: (geometry area)
+    aoi_area_sqm = aoi.area()
+    # Convert the area to square kilometers
+    aoi_area_info = aoi_area_sqm.getInfo()/1e6
+    aoi_area_rounded = round(aoi_area_info, 4)
+    return aoi_area_rounded
+
 # Main function to run the Streamlit app
 def main():
     # initialize gee 
@@ -128,13 +149,13 @@ def main():
         st.subheader("Navigation:")
         st.markdown(
             """
-                - [dNBR Map](#ndvi-viewer)
+                - [dNBR Map](#wildfire-burn-severity-analysis)
             """)
     
         st.subheader("Contact:")
         st.markdown("[![LinkedIn](https://static.licdn.com/sc/h/8s162nmbcnfkg7a0k8nq9wwqo)](https://linkedin.com/in/ahmed-islem-mokhtari) [![GitHub](https://github.githubassets.com/favicons/favicon-dark.png)](https://github.com/IndigoWizard) [![Medium](https://miro.medium.com/1*m-R_BkNf1Qjr1YbyOIJY2w.png)](https://medium.com/@Indigo.Wizard/mt-chenoua-forest-fires-analysis-with-remote-sensing-614681f468e9)")
 
-        st.caption("ʕ •ᴥ•ʔ Star⭐the [project on GitHub](https://github.com/IndigoWizard/NDVI-Viewer/)!")
+        st.caption("ʕ •ᴥ•ʔ Star⭐the [project on GitHub](https://github.com/IndigoWizard/wildfire-burn-severity/)!")
 
     with st.container():
         st.title("Wildfire Burn Severity Analysis")
@@ -353,12 +374,12 @@ def main():
         ndwi_palette = ["#caf0f8", "#00b4d8", "#023e8a"]
         dNBR_classified_palette = ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
         with col3:            
-            # Create an HTML legend for NDVI classes
-            ndvi_legend_html = """
-                <div class="ndvilegend" style="border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); background: rgba(0, 0, 0, 0.05);">
+            # Create an HTML legend for NDWI classes
+            ndwi_legend_html = """
+                <div class="ndwilegend">
                     <h5>NDWI</h5>
                     <div style="display: flex; flex-direction: row; align-items: flex-start; gap: 1rem; width: 100%;">
-                        <div style="width: 30px; height: 200px; background: linear-gradient({0},{1},{2});"></div>
+                        <div style="width: 30px; height: 200px; background: linear-gradient({0},{1},{2}); border-radius: 2px;"></div>
                         <div style="display: flex; flex-direction: column; justify-content: space-between; height: 200px;">
                             <span>-1</span>
                             <span style="align-self: flex-end;">1</span>
@@ -367,30 +388,63 @@ def main():
                 </div>
             """.format(*ndwi_palette)
 
-            # Display the NDVI legend using st.markdown
-            st.markdown(ndvi_legend_html, unsafe_allow_html=True)
+            # Display the NDWI legend using st.markdown
+            st.markdown(ndwi_legend_html, unsafe_allow_html=True)
 
         with col4:            
-            # Create an HTML legend for NDVI classes
-            reclassified_ndvi_legend_html = """
-                <div class="reclassifiedndvi" style="border-radius: 5px; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); background: rgba(0, 0, 0, 0.05);">
+            # Create an HTML legend for dNBR classes
+            reclassified_dNBR_legend_html = """
+                <div class="reclassifieddNBR">
                     <h5>Reclassified Delta NBR</h5>
                     <ul style="list-style-type: none; padding: 0;">
-                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {0};">&#9632;</span> Enhanced Regrowth (High).</li>
-                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {1};">&#9632;</span> Enhanced Regrowth (Low).</li>
-                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {2};">&#9632;</span> Unburned.</li>
-                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {3};">&#9632;</span> Low Severity Burns.</li>
-                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {4};">&#9632;</span> Moderate-Low Severity Burns.</li>
-                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {5};">&#9632;</span> Moderate-High Severity Burns.</li>
-                        <li style="margin: 0.2em 0px; padding: 0;"><span style="color: {6};">&#9632;</span> High Severity Burns.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="background-color: {0}; opacity: 0.75; display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px;"></span> Enhanced Regrowth (High).</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="background-color: {1}; opacity: 0.75; display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px;"></span> Enhanced Regrowth (Low).</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="background-color: {2}; opacity: 0.75; display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px;"></span> Unburned.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="background-color: {3}; opacity: 0.75; display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px;"></span> Low Severity Burns.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="background-color: {4}; opacity: 0.75; display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px;"></span> Moderate-Low Severity Burns.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="background-color: {5}; opacity: 0.75; display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px;"></span> Moderate-High Severity Burns.</li>
+                        <li style="margin: 0.2em 0px; padding: 0;"><span style="background-color: {6}; opacity: 0.75; display: inline-block; width: 15px; height: 15px; border-radius: 50%; margin-right: 5px;"></span> High Severity Burns.</li>
                     </ul>
                 </div>
             """.format(*dNBR_classified_palette)
 
-            # Display the Reclassified NDVI legend using st.markdown
-            st.markdown(reclassified_ndvi_legend_html, unsafe_allow_html=True)
+            # Display the Reclassified dNBR legend using st.markdown
+            st.markdown(reclassified_dNBR_legend_html, unsafe_allow_html=True)
 
     #### Legend - END
+
+    #### Area Calculation - START
+    with st.form("report_form"):
+        # geojson area: (geometry area)
+        geometry_area = geojson_area(geometry_aoi)
+
+        # Calculate and display the areas of each dNBR class
+        dNBR_class_areas = []
+        for i in range(1, 8):
+            area = calculate_class_area(masked_dNBR_classified, geometry_aoi, i)
+            dNBR_class_areas.append(area / 1e6)  # Convert to square kilometers
+
+        class_names = [
+            "Enhanced Regrowth (High)",
+            "Enhanced Regrowth (Low)",
+            "Unburned",
+            "Low Severity Burns",
+            "Moderate-Low Severity Burns",
+            "Moderate-High Severity Burns",
+            "High Severity Burns",
+        ]
+        
+        report_form = st.form_submit_button("Generate report", type="primary")
+        if report_form:
+                # print area of interest
+                st.write(f"Area of Interest: ~", {geometry_area}, "(Km²)")
+
+                # print area of individual dnbr classes
+                for i, area in enumerate(dNBR_class_areas, start=1):
+                    st.write(f"{class_names[i-1]}: ~", round(area, 4), "(Km²)")
+
+    #### Area Calculation - END
+
     ##### Custom Styling
     st.markdown(
     """
