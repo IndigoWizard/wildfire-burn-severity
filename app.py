@@ -209,8 +209,10 @@ def main():
                 longitude = last_uploaded_centroid[0]
                 m = folium.Map(location=[latitude, longitude], tiles=None, zoom_start=11, control_scale=True)
             else:
+                latitude=36.60
+                longitude=16.00
                 # Default location if no file is uploaded
-                m = folium.Map(location=[36.60, 16.00], tiles=None, zoom_start=5, control_scale=True)
+                m = folium.Map(location=[latitude, longitude], tiles=None, zoom_start=5, control_scale=True)
 
             ## Primary basemap
             # OSM
@@ -423,8 +425,8 @@ def main():
         for i in range(1, 8):
             area = calculate_class_area(masked_dNBR_classified, geometry_aoi, i)
             dNBR_class_areas.append(area / 1e6)  # Convert to square kilometers
-
-        class_names = [
+        
+        class_names = [ # dNBR class names
             "Enhanced Regrowth (High)",
             "Enhanced Regrowth (Low)",
             "Unburned",
@@ -433,15 +435,30 @@ def main():
             "Moderate-High Severity Burns",
             "High Severity Burns",
         ]
-        
-        report_form = st.form_submit_button("Generate report", type="primary")
-        if report_form:
-                # print area of interest
-                st.write(f"Area of Interest: ~", {geometry_area}, "(Km²)")
 
-                # print area of individual dnbr classes
+        # Report submit button
+        report_form = st.form_submit_button("Generate report", type="primary")
+
+        # Stats layout
+        col1, col2 = st.columns([1,1])
+        col3, col4 = st.columns([1.5,2])
+
+        if report_form:
+                # setting up stats to print
+                centroid_info = f"ROI Location: [{round(latitude, 4)}, {round(longitude, 4)}]"
+                area_of_interest = f"Surface Area of Interest: ~{geometry_area} (Km²)"
+                initial_date_range = f"Pre-Fire date range: {str_initial_start_date}, {str_initial_end_date}"
+                updated_date_range = f"Post-Fire date range: {str_updated_start_date}, {str_updated_end_date}"
+
+                col1.success(centroid_info) # location
+                col2.success(area_of_interest) # size of aoi
+                col1.success(initial_date_range) # pre-fire date range
+                col2.success(updated_date_range) # post-fire date range
+
+                # print area of individual dNBR classes
                 for i, area in enumerate(dNBR_class_areas, start=1):
-                    st.write(f"{class_names[i-1]}: ~", round(area, 4), "(Km²)")
+                    class_sq = f"{class_names[i-1]}: ~ {round(area, 4)} (Km²)"
+                    col3.info(class_sq)
 
     #### Area Calculation - END
 
