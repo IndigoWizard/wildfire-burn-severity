@@ -5,6 +5,8 @@ from google.oauth2 import service_account
 import geemap
 import folium
 from streamlit_folium import folium_static
+from streamlit_elements import elements, mui
+from streamlit_elements import nivo
 from datetime import datetime, timedelta
 import json
 
@@ -209,10 +211,10 @@ def main():
                 longitude = last_uploaded_centroid[0]
                 m = folium.Map(location=[latitude, longitude], tiles=None, zoom_start=11, control_scale=True)
             else:
-                latitude=36.60
-                longitude=16.00
+                # latitude=36.60
+                # longitude=16.00
                 # Default location if no file is uploaded
-                m = folium.Map(location=[latitude, longitude], tiles=None, zoom_start=5, control_scale=True)
+                m = folium.Map(location=[36.60, 16.00], tiles=None, zoom_start=5, control_scale=True)
 
             ## Primary basemap
             # OSM
@@ -444,21 +446,153 @@ def main():
         col3, col4 = st.columns([1.5,2])
 
         if report_form:
-                # setting up stats to print
-                centroid_info = f"ROI Location: [{round(latitude, 4)}, {round(longitude, 4)}]"
-                area_of_interest = f"Surface Area of Interest: ~{geometry_area} (Km²)"
-                initial_date_range = f"Pre-Fire date range: {str_initial_start_date}, {str_initial_end_date}"
-                updated_date_range = f"Post-Fire date range: {str_updated_start_date}, {str_updated_end_date}"
+            # setting up stats to print
+            centroid_info = f"**ROI Location:** [:blue[{round(latitude, 4)}], :blue[{round(longitude, 4)}]]"
+            area_of_interest = f"**Surface Area of Region of Interest: ~:blue[{geometry_area}] (Km²)**"
+            initial_date_range = f"**Pre-Fire date range:** :blue-background[{str_initial_start_date}], :blue-background[{str_initial_end_date}]"
+            updated_date_range = f"**Post-Fire date range:** :blue-background[{str_updated_start_date}], :blue-background[{str_updated_end_date}]"
 
-                col1.success(centroid_info) # location
-                col2.success(area_of_interest) # size of aoi
-                col1.success(initial_date_range) # pre-fire date range
-                col2.success(updated_date_range) # post-fire date range
+            col1.success(centroid_info) # location
+            col1.success(area_of_interest) # size of aoi
+            col2.success(initial_date_range) # pre-fire date range
+            col2.success(updated_date_range) # post-fire date range
 
-                # print area of individual dNBR classes
-                for i, area in enumerate(dNBR_class_areas, start=1):
-                    class_sq = f"{class_names[i-1]}: ~ {round(area, 4)} (Km²)"
-                    col3.info(class_sq)
+            # print area of individual dNBR classes
+            for i, area in enumerate(dNBR_class_areas, start=1):
+                class_sq = f"**{class_names[i-1]}: ~** :green[{round(area, 4)}] **(Km²)**"
+                col3.info(class_sq)
+
+            # Display Interactive Pie Chart
+            with col4:
+                # Display stat visuals
+                DATA_PIE = [
+                    { "id": class_names[i-1], "label": class_names[i-1], "value": round(area, 4), "color": dNBR_classified_palette[i-1] }
+                    for i, area in enumerate(dNBR_class_areas, start=1)
+                ]
+
+                # Render the nivo.Pie component with the defined theme
+                with elements("nivo_pie_chart"):
+                    with mui.Box(sx={"height": 500}):
+                        nivo.Pie(
+                            data=DATA_PIE,
+                            margin={"top": 50, "right": 100, "bottom": 200, "left": 100},
+                            innerRadius=0.5,
+                            padAngle=0.7,
+                            cornerRadius=3,
+                            activeOuterRadiusOffset=8,
+                            borderWidth=1,
+                            borderColor={"from": "color", "modifiers": [["darker", 0.8]]},
+                            arcLinkLabelsSkipAngle=2,
+                            arcLinkLabelsTextColor={"from": "color"},
+                            arcLinkLabelsColor={"from": "color"},
+                            colors={"datum": 'data.color'},
+                            arcLinkLabel="value",
+                            arcLinkLabelsThickness=2,
+                            arcLabelsSkipAngle=10,
+                            arcLinkLabelsDiagonalLength=10,
+                            arcLinkLabelsStraightLength=10,
+                            arcLinkLabelsTextOffset=4,
+                            arcLabelsTextColor={"from": "color", "modifiers": [["darker", 4]]},
+                            defs=[
+                                {
+                                    "id": "HighSeverityBurns",
+                                    "type": "patternDots",
+                                    "background": "#902cd6bf",
+                                    "color": "#902cd6",
+                                    "size": 4,
+                                    "padding": 1,
+                                    "stagger": True,
+                                },
+                                {
+                                    "id": "ModerateHighSeverityBurns",
+                                    "type": "patternLines",
+                                    "spacing": 10,
+                                    "rotation": 5,
+                                    "lineWidth": 6,
+                                    "background": "#e86c4ebf",
+                                    "color": "#e86c4e"
+                                },
+                                {
+                                    "id": "ModerateLowSeverityBurns",
+                                    "type": "patternSquares",
+                                    "background": "#f7a769bf",
+                                    "color": "#f7a769",
+                                    "rotation": -45,
+                                    "lineWidth": 5,
+                                    "spacing": 10,
+                                    "stagger": True,
+                                },
+                                {
+                                    "id": "LowSeverityBurns",
+                                    "type": "patternLines",
+                                    "background": "#f8ebb0bf",
+                                    "color": "#f8ebb0",
+                                    "rotation": -45,
+                                    "lineWidth": 6,
+                                    "spacing": 10,
+                                },
+                                {
+                                    "id": "Unburned",
+                                    "type": "patternDots",
+                                    "size": 4,
+                                    "padding": 1,
+                                    "stagger": True,
+                                    "background": "#a1d574bf",
+                                    "color": "#a1d574"
+                                },
+                                {
+                                    "id": "EnhancedRegrowthLow",
+                                    "type": "patternLines",
+                                    "spacing": 10,
+                                    "rotation": -45,
+                                    "lineWidth": 6,
+                                    "background": "#2aae29bf",
+                                    "color": "#2aae29"
+                                },
+                                {
+                                    "id": "EnhancedRegrowthHigh",
+                                    "type": "patternLines",
+                                    "spacing": 10,
+                                    "rotation": 45,
+                                    "lineWidth": 6,
+                                    "background": "#1c742cbf",
+                                    "color": "#1c742c"
+                                },
+                            ],
+                            fill=[
+                                {"match": {"id": "Enhanced Regrowth (High)"}, "id": "EnhancedRegrowthHigh"},
+                                {"match": {"id": "Enhanced Regrowth (Low)"}, "id": "EnhancedRegrowthLow"},
+                                {"match": {"id": "Unburned"}, "id": "Unburned"},
+                                {"match": {"id": "Low Severity Burns"}, "id": "LowSeverityBurns"},
+                                {"match": {"id": "Moderate-Low Severity Burns"}, "id": "ModerateLowSeverityBurns"},
+                                {"match": {"id": "Moderate-High Severity Burns"}, "id": "ModerateHighSeverityBurns"},
+                                {"match": {"id": "High Severity Burns"}, "id": "HighSeverityBurns"},
+                            ],
+                            theme={
+                                "tooltip": {
+                                    "container": { # container within the tooltip
+                                        "background": "white",  # background of the tooltip inside container
+                                        "fontSize": 14,
+                                        "font-family": "sans-serif",
+                                        "padding": 2,
+                                        "border-radius": 4
+                                    },
+                                    "basic": { # the box within the container within the tooltip
+                                        "whiteSpace": "pre",
+                                        "display": "flex",
+                                        "flex-direction": "row",
+                                        "alignItems": "center",
+                                        "justify-content": "space-around",
+                                        "background": "#0e1117",
+                                        "margin": 1,
+                                        "padding": 5,
+                                        "width": "fit-content",
+                                        "height": "fit-content",
+                                        "color": "white",
+                                    },
+                                }
+                            }
+                        )
 
     #### Area Calculation - END
 
