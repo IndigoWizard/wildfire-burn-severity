@@ -211,8 +211,8 @@ def main():
                 longitude = last_uploaded_centroid[0]
                 m = folium.Map(location=[latitude, longitude], tiles=None, zoom_start=11, control_scale=True)
             else:
-                # latitude=36.60
-                # longitude=16.00
+                latitude=36.60
+                longitude=16.00
                 # Default location if no file is uploaded
                 m = folium.Map(location=[36.60, 16.00], tiles=None, zoom_start=5, control_scale=True)
 
@@ -499,64 +499,63 @@ def main():
                                     "type": "patternDots",
                                     "background": "#902cd6bf",
                                     "color": "#902cd6",
-                                    "size": 4,
-                                    "padding": 1,
+                                    "size": 3,
+                                    "padding": 2,
                                     "stagger": True,
                                 },
                                 {
                                     "id": "ModerateHighSeverityBurns",
-                                    "type": "patternLines",
-                                    "spacing": 10,
-                                    "rotation": 5,
-                                    "lineWidth": 6,
+                                    "type": "patternDots",
                                     "background": "#e86c4ebf",
-                                    "color": "#e86c4e"
+                                    "color": "#e86c4e",
+                                    "size": 4,
+                                    "padding": 3,
+                                    "stagger": True,
                                 },
                                 {
                                     "id": "ModerateLowSeverityBurns",
-                                    "type": "patternSquares",
+                                    "type": "patternDots",
                                     "background": "#f7a769bf",
                                     "color": "#f7a769",
-                                    "rotation": -45,
-                                    "lineWidth": 5,
-                                    "spacing": 10,
+                                    "size": 4.5,
+                                    "padding": 4.5,
                                     "stagger": True,
                                 },
                                 {
                                     "id": "LowSeverityBurns",
-                                    "type": "patternLines",
+                                    "type": "patternSquares",
                                     "background": "#f8ebb0bf",
                                     "color": "#f8ebb0",
-                                    "rotation": -45,
-                                    "lineWidth": 6,
-                                    "spacing": 10,
+                                    "size": 5,
+                                    "padding": 3,
+                                    "stagger": True,
                                 },
                                 {
                                     "id": "Unburned",
-                                    "type": "patternDots",
-                                    "size": 4,
-                                    "padding": 1,
-                                    "stagger": True,
+                                    "type": "patternSquares",
                                     "background": "#a1d574bf",
-                                    "color": "#a1d574"
+                                    "color": "#a1d574",
+                                    "size": 4,
+                                    "padding": 1.5,
+                                    "stagger": True,
                                 },
                                 {
                                     "id": "EnhancedRegrowthLow",
                                     "type": "patternLines",
-                                    "spacing": 10,
-                                    "rotation": -45,
-                                    "lineWidth": 6,
                                     "background": "#2aae29bf",
-                                    "color": "#2aae29"
+                                    "color": "#2aae29",
+                                    "rotation": -15,
+                                    "lineWidth": 4,
+                                    "spacing": 9,
                                 },
                                 {
                                     "id": "EnhancedRegrowthHigh",
                                     "type": "patternLines",
-                                    "spacing": 10,
-                                    "rotation": 45,
-                                    "lineWidth": 6,
+                                    "color": "#1c742c",
                                     "background": "#1c742cbf",
-                                    "color": "#1c742c"
+                                    "rotation": 105,
+                                    "lineWidth": 3,
+                                    "spacing": 10,
                                 },
                             ],
                             fill=[
