@@ -181,6 +181,32 @@ def main():
                 # calling upload files function
                 geometry_aoi = upload_files_proc(upload_files)
 
+            ## Accessibility: Color palette input
+                st.info("Custom Color Palettes")
+                accessibility = st.selectbox("Accessibility: Colorblind-friendly Palettes", ["Normal", "Deuteranopia", "Protanopia", "Tritanopia", "Achromatopsia"])
+
+                # Define default color palettes: used in map layers & map legend
+                default_dnbr_palette = ["#ffffe5", "#f7fcb9", "#78c679", "#41ab5d", "#238443", "#005a32"]
+                default_dNBR_classified_palette = ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
+                default_ndwi_palette = ["#caf0f8", "#00b4d8", "#023e8a"]
+
+                # a copy of default colors that can be reaffected
+                ndwi_palette = default_ndwi_palette.copy() 
+                dnbr_palette = default_dnbr_palette.copy() 
+                dNBR_classified_palette = default_dNBR_classified_palette.copy()
+
+                if accessibility == "Deuteranopia":
+                    dnbr_palette = ["#fffaa1","#f4ef8e","#9a5d67","#573f73","#372851","#191135"]
+                    dNBR_classified_palette = ["#95a600","#92ed3e","#affac5","#78ffb0","#69d6c6","#22459c","#000e69"]
+                elif accessibility == "Protanopia":
+                    dnbr_palette = ["#a6f697","#7def75","#2dcebb","#1597ab","#0c677e","#002c47"]
+                    dNBR_classified_palette = ["#95a600","#92ed3e","#affac5","#78ffb0","#69d6c6","#22459c","#000e69"]
+                elif accessibility == "Tritanopia":
+                    dnbr_palette = ["#cdffd7","#a1fbb6","#6cb5c6","#3a77a5","#205080","#001752"]
+                    dNBR_classified_palette = ["#ed4700","#ed8a00","#e1fabe","#99ff94","#87bede","#2e40cf","#0600bc"]
+                elif accessibility == "Achromatopsia":
+                    dnbr_palette = ["#407de0", "#2763da", "#394388", "#272c66", "#16194f", "#010034"]
+                    dNBR_classified_palette = ["#004f3d", "#338796", "#66a4f5", "#3683ff", "#3d50ca", "#421c7f", "#290058"]
 
         with st.container():
             ## Time range input
@@ -259,7 +285,7 @@ def main():
             ndwi_params = {
             'min': -1,
             'max': 0,
-            'palette': ["caf0f8", "00b4d8", "023e8a"]
+            'palette': ndwi_palette
             }
 
             # NBR (Normalized Burn Ratio)
@@ -276,7 +302,7 @@ def main():
             dNBR_params = {
             'min': -0.5,
             'max': 1.3,
-            'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
+            'palette': dnbr_palette
             }
 
             img_classifier = dNBR
@@ -294,7 +320,7 @@ def main():
             dNBR_classified_params = {
             'min': 1,
             'max': 7,
-            'palette': ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
+            'palette': dNBR_classified_palette
             }
 
             ## Image masking
@@ -375,8 +401,6 @@ def main():
     with st.container():
         st.subheader("Map Legend:")
         col3, col4, col5 = st.columns([1,2,1])
-        ndwi_palette = ["#caf0f8", "#00b4d8", "#023e8a"]
-        dNBR_classified_palette = ['#1c742c', '#2aae29', '#a1d574', '#f8ebb0', '#f7a769', '#e86c4e', '#902cd6']
         with col3:            
             # Create an HTML legend for NDWI classes
             ndwi_legend_html = """
@@ -493,69 +517,76 @@ def main():
                             arcLinkLabelsStraightLength=10,
                             arcLinkLabelsTextOffset=4,
                             arcLabelsTextColor={"from": "color", "modifiers": [["darker", 4]]},
-                            defs=[
+                            defs = [
                                 {
-                                    "id": "HighSeverityBurns",
-                                    "type": "patternDots",
-                                    "background": "#902cd6bf",
-                                    "color": "#902cd6",
-                                    "size": 3,
-                                    "padding": 2,
+                                    "id": "EnhancedRegrowthHigh",
+                                    "type": "patternLines",
+                                    # "color": "#1c742cbf",
+                                    "color": f"{dNBR_classified_palette[0]}",
+                                    "background": f"{dNBR_classified_palette[0]}bf",
+                                    "rotation": 105,
+                                    "lineWidth": 3,
+                                    "spacing": 10,
+                                },
+                                {
+                                    "id": "EnhancedRegrowthLow",
+                                    "type": "patternLines",
+                                    # "color": "#2aae29bf",
+                                    "color": f"{dNBR_classified_palette[1]}",
+                                    "background": f"{dNBR_classified_palette[1]}bf",
+                                    "rotation": -15,
+                                    "lineWidth": 4,
+                                    "spacing": 9,
+                                },
+                                {
+                                    "id": "Unburned",
+                                    "type": "patternSquares",
+                                    # "color": "#a1d574bf",
+                                    "color": f"{dNBR_classified_palette[2]}",
+                                    "background": f"{dNBR_classified_palette[2]}bf",
+                                    "size": 4,
+                                    "padding": 1.5,
                                     "stagger": True,
                                 },
                                 {
-                                    "id": "ModerateHighSeverityBurns",
-                                    "type": "patternDots",
-                                    "background": "#e86c4ebf",
-                                    "color": "#e86c4e",
-                                    "size": 4,
+                                    "id": "LowSeverityBurns",
+                                    "type": "patternSquares",
+                                    # "color": "#f8ebb0bf",
+                                    "color": f"{dNBR_classified_palette[3]}",
+                                    "background": f"{dNBR_classified_palette[3]}bf",
+                                    "size": 5,
                                     "padding": 3,
                                     "stagger": True,
                                 },
                                 {
                                     "id": "ModerateLowSeverityBurns",
                                     "type": "patternDots",
-                                    "background": "#f7a769bf",
-                                    "color": "#f7a769",
+                                    # "color": "#f7a769bf",
+                                    "color": f"{dNBR_classified_palette[4]}",
+                                    "background": f"{dNBR_classified_palette[4]}bf",
                                     "size": 4.5,
                                     "padding": 4.5,
                                     "stagger": True,
                                 },
                                 {
-                                    "id": "LowSeverityBurns",
-                                    "type": "patternSquares",
-                                    "background": "#f8ebb0bf",
-                                    "color": "#f8ebb0",
-                                    "size": 5,
+                                    "id": "ModerateHighSeverityBurns",
+                                    "type": "patternDots",
+                                    # "color": "#e86c4ebf",
+                                    "color": f"{dNBR_classified_palette[5]}",
+                                    "background": f"{dNBR_classified_palette[5]}bf",
+                                    "size": 4,
                                     "padding": 3,
                                     "stagger": True,
                                 },
                                 {
-                                    "id": "Unburned",
-                                    "type": "patternSquares",
-                                    "background": "#a1d574bf",
-                                    "color": "#a1d574",
-                                    "size": 4,
-                                    "padding": 1.5,
+                                    "id": "HighSeverityBurns",
+                                    "type": "patternDots",
+                                    # "color": "#902cd6bf",
+                                    "color": f"{dNBR_classified_palette[6]}",
+                                    "background": f"{dNBR_classified_palette[6]}bf",
+                                    "size": 3,
+                                    "padding": 2,
                                     "stagger": True,
-                                },
-                                {
-                                    "id": "EnhancedRegrowthLow",
-                                    "type": "patternLines",
-                                    "background": "#2aae29bf",
-                                    "color": "#2aae29",
-                                    "rotation": -15,
-                                    "lineWidth": 4,
-                                    "spacing": 9,
-                                },
-                                {
-                                    "id": "EnhancedRegrowthHigh",
-                                    "type": "patternLines",
-                                    "color": "#1c742c",
-                                    "background": "#1c742cbf",
-                                    "rotation": 105,
-                                    "lineWidth": 3,
-                                    "spacing": 10,
                                 },
                             ],
                             fill=[
