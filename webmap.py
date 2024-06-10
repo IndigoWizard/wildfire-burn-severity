@@ -1,3 +1,8 @@
+"""
+Original Project Author: IndigoWizard, Sep 24, 2022.
+https://github.com/IndigoWizard/wildfire-burn-severity/
+"""
+
 import ee
 from ee import image
 import folium
