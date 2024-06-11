@@ -22,6 +22,197 @@ st.set_page_config(
     }
 )
 
+### CSS STYLING 
+st.markdown(
+"""
+<style>
+    /* Header*/
+    /* Dark theme version */
+    .st-emotion-cache-h4xjwg.ezrtsby2 {
+        height: 1rem;
+        background: none;
+    }
+    /* Light theme version */
+    .st-emotion-cache-12fmjuu.ezrtsby2 {
+        height: 1rem;
+        background: none;
+    }
+
+    /* Smooth scrolling*/
+    .main {
+        scroll-behavior: smooth;
+    }
+    
+    /* main app body with less padding*/
+    .st-emotion-cache-1jicfl2.ea3mdgi5 {
+        padding-block: 0;
+        position: relative;
+    }
+
+    /*Sidebar*/
+    .st-emotion-cache-qeahdt.eczjsme9 {
+        padding: 0 1rem;
+    }
+    .st-emotion-cache-1mi2ry5.eczjsme6 {
+        height: 0;
+    }
+    
+    .st-emotion-cache-12skds7 {
+        height: 0;
+    }
+    .st-emotion-cache-1gv3huu.eczjsme16 {
+        background-color: rgb(240, 242, 246);
+    }
+
+    /*Sidebar : inside container*/
+    .css-ge7e53 {
+        width: fit-content;
+    }
+
+    /*Sidebar : image*/
+    .css-1kyxreq {
+        display: block !important;
+    }
+
+    /*Sidebar : Navigation list*/
+    div.element-container:nth-child(4) > div:nth-child(1) > div:nth-child(1) > ul:nth-child(1) {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    div.element-container:nth-child(4) > div:nth-child(1) > div:nth-child(1) > ul:nth-child(1) > li {
+        padding: 0;
+        margin: 0;
+        padding: 0;
+        font-weight: 600;
+    }
+    div.element-container:nth-child(4) > div:nth-child(1) > div:nth-child(1) > ul:nth-child(1) > li > a {
+        text-decoration: none;
+        transition: 0.2s ease-in-out;
+        padding-inline: 10px;
+    }
+    
+    div.element-container:nth-child(4) > div:nth-child(1) > div:nth-child(1) > ul:nth-child(1) > li > a:hover {
+        color: rgb(46, 206, 255);
+        transition: 0.2s ease-in-out;
+        background: #131720;
+        border-radius: 4px;
+    }
+    
+    /* Sidebar: socials*/
+    div.css-rklnmr:nth-child(6) > div:nth-child(1) > div:nth-child(1) > p {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    /* ******* Upload Section ******* */
+    /* ***** Upload info box */
+    /* Light theme version */
+    .st-emotion-cache-1gulkj5 {
+        background-color: rgb(215, 210, 225);
+        color: rgb(40, 40, 55);
+    }
+
+    /* ***** Upload SVG: Mobile view */
+    @media (max-width: 576px) {
+        /* Dark theme version*/
+        .st-emotion-cache-1on073z.e1b2p2ww13 {
+            display: unset;
+        }
+
+        /* Light theme version*/
+        .st-emotion-cache-nwtri.e1b2p2ww13 {
+            display: unset;
+        }
+    }
+    
+    /* ***** Upload button: dark theme*/
+    .st-emotion-cache-1erivf3.e1b2p2ww15 {
+        display: flex;
+        flex-direction: column;
+        align-items: inherit;
+        font-size: 14px;
+    }
+    .st-emotion-cache-19rxjzo.ef3psqc12 {
+        display: flex;
+        flex-direction: row;
+        margin-inline: 0;
+    }
+    
+    /* ***** Upload button: light theme*/
+    .st-emotion-cache-1gulkj5.e1b2p2ww15 {
+        display: flex;
+        flex-direction: column;
+        align-items: inherit;
+        font-size: 14px;
+    }
+
+    .st-emotion-cache-7ym5gk.ef3psqc12 {
+        display: flex;
+        flex-direction: row;
+        margin-inline: 0;
+        background: rgba(0, 3, 172, 0.15);
+    }
+
+    /* ******* Status elements ******* */
+    /* Light Theme */
+    /* YELLOW */
+    .st-al {
+        background-color: rgba(255, 227, 18, 0.35);
+    }
+    /* GREEN */
+    .st-bc {
+        background-color: rgba(33, 195, 84, 0.35);
+    }
+    /* BLUE */
+    .st-be {
+        background-color: rgba(28, 131, 225, 0.35);
+    }
+
+    /* ******* Form Submit ******* */
+    /* ***** Generate Map */
+    /* Dark theme version */
+    .st-emotion-cache-19rxjzo.ef3psqc7 {
+        width: 100%;
+    }
+    /* Light Theme Version */
+    .st-emotion-cache-7ym5gk.ef3psqc7 {
+        width: 100%;
+        background: rgba(0, 3, 172, 0.25);
+    }
+
+    /* ******* Legend style ******* */
+
+    .ndvilegend {
+        transition: 0.2s ease-in-out;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .ndvilegend:hover {
+        transition: 0.3s ease-in-out;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.12);
+        cursor: pointer;
+    }
+    .reclassifiedndvi {
+        transition: 0.2s ease-in-out;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        background: rgba(0, 0, 0, 0.05);
+    }
+    .reclassifiedndvi:hover {
+        transition: 0.3s ease-in-out;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.12);
+        cursor: pointer;
+    }
+    
+
+</style>
+""", unsafe_allow_html=True)
+
 # Initializing the Earth Engine library
 # GEE Servuce Account Auth+init for cloud deployment
 @st.cache_data(persist=True)
@@ -499,7 +690,7 @@ def main():
                     with mui.Box(sx={"height": 500}):
                         nivo.Pie(
                             data=DATA_PIE,
-                            margin={"top": 50, "right": 100, "bottom": 200, "left": 100},
+                            margin={"top": 20, "right": 100, "bottom": 150, "left": 100},
                             innerRadius=0.5,
                             padAngle=0.7,
                             cornerRadius=3,
@@ -633,11 +824,6 @@ def main():
         /*Map iframe*/
         iframe {
             width: 100%;
-        }
-        .css-1o9kxky.e1f1d6gn0 {
-            border: 2px solid #ffffff4d;
-            border-radius: 4px;
-            padding: 1rem;
         }
     </style>
     """, unsafe_allow_html=True)
