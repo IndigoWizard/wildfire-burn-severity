@@ -2,7 +2,6 @@ import streamlit as st
 import ee
 from ee import oauth
 from google.oauth2 import service_account
-import geemap
 import folium
 from streamlit_folium import folium_static
 from streamlit_elements import elements, mui
@@ -18,7 +17,7 @@ st.set_page_config(
     menu_items={
     'Get help': "https://github.com/IndigoWizard/wildfire-burn-severity",
     'Report a bug': "https://github.com/IndigoWizard/wildfire-burn-severity/issues",
-    'About': "This app was developped by [IndigoWizard](https://github.com/IndigoWizard/wildfire-burn-severity) for the purpose of environmental monitoring and geospatial analysis"
+    'About': "This app was developped by [IndigoWizard](https://github.com/IndigoWizard/wildfire-burn-severity) (original author) for the purpose of environmental monitoring and geospatial analysis. Give proper credit when forking/using the open source code/piece of code."
     }
 )
 
@@ -49,7 +48,8 @@ st.markdown(
         position: relative;
     }
 
-    /*Sidebar*/
+    /* ******* Sidebar ******* */
+    /* Main container */
     .st-emotion-cache-qeahdt.eczjsme9 {
         padding: 0 1rem;
     }
@@ -64,7 +64,12 @@ st.markdown(
         background-color: rgb(240, 242, 246);
     }
 
-    /*Sidebar : inside container*/
+    /* Logo */
+    .st-emotion-cache-1kyxreq.e115fcil2 {
+        justify-content: center;
+    }
+
+    /* Sidebar : inside container */
     .css-ge7e53 {
         width: fit-content;
     }
@@ -117,7 +122,7 @@ st.markdown(
     /* ***** Upload SVG: Mobile view */
     @media (max-width: 576px) {
         /* Dark theme version*/
-        .st-emotion-cache-1on073z.e1b2p2ww13 {
+        .st-emotion-cache-wn8ljn.e1b2p2ww13 {
             display: unset;
         }
 
@@ -155,21 +160,6 @@ st.markdown(
         background: rgba(0, 3, 172, 0.15);
     }
 
-    /* ******* Status elements ******* */
-    /* Light Theme */
-    /* YELLOW */
-    .st-al {
-        background-color: rgba(255, 227, 18, 0.35);
-    }
-    /* GREEN */
-    .st-bc {
-        background-color: rgba(33, 195, 84, 0.35);
-    }
-    /* BLUE */
-    .st-be {
-        background-color: rgba(28, 131, 225, 0.35);
-    }
-
     /* ******* Form Submit ******* */
     /* ***** Generate Map */
     /* Dark theme version */
@@ -182,27 +172,34 @@ st.markdown(
         background: rgba(0, 3, 172, 0.25);
     }
 
+    /* Buttons */
+    /* Light theme verison; hober effect */
+    .st-emotion-cache-7ym5gk:hover {
+        border-color: rgb(255, 0, 110);
+        color: rgb(255, 0, 110);
+    }
+
     /* ******* Legend style ******* */
 
-    .ndvilegend {
+    .ndwilegend {
         transition: 0.2s ease-in-out;
         border-radius: 5px;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
         background: rgba(0, 0, 0, 0.05);
     }
-    .ndvilegend:hover {
+    .ndwilegend:hover {
         transition: 0.3s ease-in-out;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
         background: rgba(0, 0, 0, 0.12);
         cursor: pointer;
     }
-    .reclassifiedndvi {
+    .reclassifieddNBR {
         transition: 0.2s ease-in-out;
         border-radius: 5px;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
         background: rgba(0, 0, 0, 0.05);
     }
-    .reclassifiedndvi:hover {
+    .reclassifieddNBR:hover {
         transition: 0.3s ease-in-out;
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
         background: rgba(0, 0, 0, 0.12);
@@ -337,12 +334,19 @@ def main():
 
     # sidebar
     with st.sidebar:
-        st.title("Wildfire Burn Severity Analysis")
+        st.logo(image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIW2NgAAIAAAUAAR4f7BQAAAAASUVORK5CYII=", link=None, icon_image="https://cdn-icons-png.flaticon.com/512/7204/7204183.png")
         st.image("https://cdn-icons-png.flaticon.com/512/7204/7204183.png", width=90)
+        st.markdown("#### Wildfire Burn Severity Analysis")
         st.subheader("Navigation:")
         st.markdown(
             """
-                - [dNBR Map](#wildfire-burn-severity-analysis)
+                - [Wildfire Map](#wildfire-burn-severity-analysis)
+                - [Map Legend](#map-legend)
+                - [Analysis Report](#analysis-report)
+                - [Interpreting the Results](#interpreting-the-results)
+                - [Environmental Index](#usage-the-environmental-index-nbr-dnbr)
+                - [Data](#data)
+                - [Credit](#credit)
             """)
     
         st.subheader("Contact:")
@@ -352,7 +356,7 @@ def main():
 
     with st.container():
         st.title("Wildfire Burn Severity Analysis")
-        st.markdown("**Evaluate Wildfire Burn Severity through NBR Analysis: Assess the Impact of Wildfires by Comparing NBR Index Values Using Sentinel-2 Satellite Images!**")
+        st.markdown("**Evaluate Wildfire Burn Severity through NBR Analysis: Assess the Impact of Wildfires Through Delta NBR Index Values Using Sentinel-2 Satellite Images!**")
 
     #### User input section - START
     # columns for input - map
@@ -633,6 +637,7 @@ def main():
     #### Legend - END
 
     #### Area Calculation - START
+    st.write("#### Analysis Report")
     with st.form("report_form"):
         # geojson area: (geometry area)
         geometry_area = geojson_area(geometry_aoi)
@@ -656,17 +661,17 @@ def main():
         # Report submit button
         report_form = st.form_submit_button("Generate report", type="primary")
 
-        # Stats layout
-        col1, col2 = st.columns([1,1])
-        col3, col4 = st.columns([1.5,2])
-
         if report_form:
+            st.write("#### Wildfire Burn Severity Analysis Report:")
+            # Stats layout
+            col1, col2 = st.columns([1,1])
+            col3, col4 = st.columns([1.5,2])
+
             # setting up stats to print
             centroid_info = f"**ROI Location:** [:blue[{round(latitude, 4)}], :blue[{round(longitude, 4)}]]"
             area_of_interest = f"**Surface Area of Region of Interest: ~:blue[{geometry_area}] (Km²)**"
             initial_date_range = f"**Pre-Fire date range:** :blue-background[{str_initial_start_date}], :blue-background[{str_initial_end_date}]"
             updated_date_range = f"**Post-Fire date range:** :blue-background[{str_updated_start_date}], :blue-background[{str_updated_end_date}]"
-
             col1.success(centroid_info) # location
             col1.success(area_of_interest) # size of aoi
             col2.success(initial_date_range) # pre-fire date range
@@ -816,6 +821,52 @@ def main():
                         )
 
     #### Area Calculation - END
+
+    ##### Miscs Infos - START
+    with st.container():
+        st.divider()
+        # Results interpretation
+        st.write("#### Interpreting the Results")
+
+        st.write("This app is designed to provide an accessible tool for both technical and non-technical users to explore and interpret burn severity and land surface changes.")
+        st.write("The burn severity map is a valuable tool, its interpretation requires consideration of various factors. When exploring the dNBR map, keep in mind:")
+
+        st.write("- Clouds, atmospheric conditions, and water bodies can affect the map's appearance and so the surface area.")
+        st.write("- Satellite sensors have limitations in distinguishing surface types, leading to color variations.")
+        st.write("- NBR/dNBR values may subtley vary with type of vegetation and land cover changes.")
+        st.write("- The map provides visual insights rather than precise representations.")
+
+        st.write("Understanding these factors will help you interpret the results more effectively. This application aims to provide you with an informative visual aid for vegetation burn severity analysis.")
+
+        ## NBR/Environmental Index
+        st.write("#### Usage the Environmental Index: NBR / dNBR")
+        st.write("The [Normalized Burn Ratio (NBR)](https://www.earthdatascience.org/courses/earth-analytics/multispectral-remote-sensing-modis/normalized-burn-index-dNBR/) is used to emphasize charred areas after a fire. The NBR vegetation index equation takes into account observations at both NIR and SWIR wavelengths: healthy vegetation has a high reflectance in the NIR spectrum, whereas recently burned sections of vegetation reflect strongly in the SWIR spectrum.")
+
+        st.write("NBR is calculated using satellite imagery that captures both Near-Infrared **(NIR)** and Short-Wave Infrared **(SWIR)** wavelengths. The formula is:")
+        st.latex(r'''
+        \text{NBR} = \frac{\text{NIR} - \text{SWIR}}{\text{NIR} + \text{SWIR}}
+        ''')
+
+        st.write("dNBR (Difference NBR) is calculated by the difference of Pre-Fire NBR and Post-Fire-NBR values. The formula is:")
+        st.latex(r'''
+        \text{dNBR} = \text{NBR}_{pre-fire} - \text{NBR}_{post-fire}
+        ''')
+
+
+        st.write("NBR values range from **[-1** to **1]**, with higher values indicating higher severity burns. Lower values represent unburned vegetated surfaces or enhanced regrowth.")
+
+        ## Data
+        st.write("#### Data")
+        st.write("This app utilizes **Sentinel-2 Level-2A atmospherically corrected Surface Reflectance images**. The [Sentinel-2 satellite constellation](https://sentinels.copernicus.eu/web/sentinel/user-guides/sentinel-2-msi/applications) consists of twin satellites (Sentinel-2A and Sentinel-2B) that capture high-resolution multispectral imagery of the Earth's surface.")
+
+        st.write("The [Level-2A](https://sentinels.copernicus.eu/web/sentinel/user-guides/sentinel-2-msi/product-types/level-2a) products have undergone atmospheric correction, enhancing the accuracy of surface reflectance values. These images are suitable for various land cover and vegetation analyses, including NBR calculations.")
+
+        ## Credits
+        st.write("##### Credit:")
+        st.caption("""The app was developped by [IndigoWizard](https://github.com/IndigoWizard) using; [Streamlit](https://streamlit.io/), [Google Earth Engine](https://github.com/google/earthengine-api) Python API and [Folium](https://github.com/python-visualization/folium). Wildfire icons created by <a href="https://www.flaticon.com/free-icons/wildfire" title="wildfire icons">Pomicon - Flaticon</a>""", unsafe_allow_html=True)
+
+        #### Miscs Info - END
+        
 
     ##### Custom Styling
     st.markdown(
