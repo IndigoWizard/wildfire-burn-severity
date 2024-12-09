@@ -822,17 +822,17 @@ def main():
     #### Area Calculation - END
 
     #### Precipitation Claculation - START
-            with st.container():
-                
-                # Def CHIRPS image collection to get precipitation data
-                def chirpsCollection(initialDate, updatedDate, aoi):
-                    chirps = ee.ImageCollection('USCB-CHG/CHIRPS/DAILY') \
-                        .filterDate(initialDate, updatedDate) \
-                        .filterBounds(aoi) \
-                        .select('precipitation')
-                
-                
+    with st.container():
 
+            # Defining CHIRPS image collection function
+            def chirpsCollection(initialDate, updatedDate, aoi):
+                chirps = (
+                    ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
+                    .filterDate(initialDate, updatedDate)
+                    .filterBounds(aoi)
+                    .select("precipitation")
+                )
+                return chirps
 
 
 
