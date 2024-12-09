@@ -8,6 +8,7 @@ from streamlit_elements import elements, mui
 from streamlit_elements import nivo
 from datetime import datetime, timedelta
 import json
+import pandas as pd
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -833,6 +834,40 @@ def main():
                     .select("precipitation")
                 )
                 return chirps
+
+            # Daily precipitation
+            def get_precipitation_data(initialDate, endDate, aoi):
+                raincol = chirpsCollection(initialDate, endDate, aoi)
+                
+                # Mapping over the collection to extract data
+                daily_precipitation = raincol.map(
+                    lambda img: ee.Feature(
+                        aoi,
+                        {
+                            "date": img.date().format("YYYY-MM-dd"),
+                            "precipitation": img.reduceRegion(
+                                reducer=ee.Reducer.mean(),
+                                geometry=aoi,
+                                scale=30
+                            ).get("precipitation"),
+                        }
+                    )
+                )
+
+                # Convert to python list
+                daily_list = daily_precipitation.getInfo()["features"]
+                
+                # Extracting dates & precipitation values
+                dates = [entry["properties"]["date"] for entry in daily_list]
+                values = [entry["properties"]["precipitation"] for entry in daily_list]
+
+                # Create a DataFrame
+                prcdf = pd.DataFrame({"Date": dates, "Precipitation": values})
+                return prcdf
+
+            # Fetch precipitation data
+            prcdf = get_precipitation_data(str_initial_start_date, str_initial_end_date, geometry_aoi)
+            st.write(prcdf)
 
 
 
