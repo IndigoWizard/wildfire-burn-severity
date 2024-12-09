@@ -863,7 +863,7 @@ def main():
 
                         # Create a DataFrame
                         rdf = pd.DataFrame({"Date": dates, "Precipitation": values})
-                        return prcdf
+                        return rdf
 
                     # Fetch precipitation data
                     rdf = get_precipitation_data(str_initial_start_date, str_initial_end_date, geometry_aoi)
