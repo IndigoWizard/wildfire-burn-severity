@@ -822,53 +822,63 @@ def main():
                         )
     #### Area Calculation - END
 
-    #### Precipitation Claculation - START
-    with st.container():
+            #### Precipitation Claculation - START
+            with st.container():
 
-            # Defining CHIRPS image collection function
-            def chirpsCollection(initialDate, updatedDate, aoi):
-                chirps = (
-                    ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
-                    .filterDate(initialDate, updatedDate)
-                    .filterBounds(aoi)
-                    .select("precipitation")
-                )
-                return chirps
+                    # Defining CHIRPS image collection function
+                    def chirpsCollection(initialDate, updatedDate, aoi):
+                        chirps = (
+                            ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
+                            .filterDate(initialDate, updatedDate)
+                            .filterBounds(aoi)
+                            .select("precipitation")
+                        )
+                        return chirps
 
-            # Daily precipitation
-            def get_precipitation_data(initialDate, endDate, aoi):
-                raincol = chirpsCollection(initialDate, endDate, aoi)
-                
-                # Mapping over the collection to extract data
-                daily_precipitation = raincol.map(
-                    lambda img: ee.Feature(
-                        aoi,
-                        {
-                            "date": img.date().format("YYYY-MM-dd"),
-                            "precipitation": img.reduceRegion(
-                                reducer=ee.Reducer.mean(),
-                                geometry=aoi,
-                                scale=30
-                            ).get("precipitation"),
-                        }
+                    # Daily precipitation
+                    def get_precipitation_data(initialDate, endDate, aoi):
+                        raincol = chirpsCollection(initialDate, endDate, aoi)
+                        
+                        # Mapping over the collection to extract data
+                        daily_precipitation = raincol.map(
+                            lambda img: ee.Feature(
+                                aoi,
+                                {
+                                    "date": img.date().format("YYYY-MM-dd"),
+                                    "precipitation": img.reduceRegion(
+                                        reducer=ee.Reducer.mean(),
+                                        geometry=aoi,
+                                        scale=30
+                                    ).get("precipitation"),
+                                }
+                            )
+                        )
+
+                        # Convert to python list
+                        daily_list = daily_precipitation.getInfo()["features"]
+                        
+                        # Extracting dates & precipitation values
+                        dates = [entry["properties"]["date"] for entry in daily_list]
+                        values = [entry["properties"]["precipitation"] for entry in daily_list]
+
+                        # Create a DataFrame
+                        rdf = pd.DataFrame({"Date": dates, "Precipitation": values})
+                        return prcdf
+
+                    # Fetch precipitation data
+                    rdf = get_precipitation_data(str_initial_start_date, str_initial_end_date, geometry_aoi)
+
+                    # Display the DataFrame in Streamlit
+                    st.dataframe(
+                        rdf,
+                        column_config={
+                            "Date": "Date",
+                            "Precipitation": st.column_config.BarChartColumn(
+                                "Rainfall (mm)", y_min=0, y_max=100, width="medium", help='Precipitation (mm)'
+                            ),
+                        },
+                        hide_index=True,
                     )
-                )
-
-                # Convert to python list
-                daily_list = daily_precipitation.getInfo()["features"]
-                
-                # Extracting dates & precipitation values
-                dates = [entry["properties"]["date"] for entry in daily_list]
-                values = [entry["properties"]["precipitation"] for entry in daily_list]
-
-                # Create a DataFrame
-                prcdf = pd.DataFrame({"Date": dates, "Precipitation": values})
-                return prcdf
-
-            # Fetch precipitation data
-            prcdf = get_precipitation_data(str_initial_start_date, str_initial_end_date, geometry_aoi)
-            st.write(prcdf)
-
 
 
     ##### Miscs Infos - START
