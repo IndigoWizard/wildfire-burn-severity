@@ -9,6 +9,7 @@ from streamlit_elements import nivo
 from datetime import datetime, timedelta
 import json
 import pandas as pd
+import calendar
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -823,62 +824,79 @@ def main():
     #### Area Calculation - END
 
             #### Precipitation Claculation - START
+           
             with st.container():
 
-                    # Defining CHIRPS image collection function
-                    def chirpsCollection(initialDate, updatedDate, aoi):
-                        chirps = (
-                            ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
-                            .filterDate(initialDate, updatedDate)
-                            .filterBounds(aoi)
-                            .select("precipitation")
-                        )
-                        return chirps
-
-                    # Daily precipitation
-                    def get_precipitation_data(initialDate, endDate, aoi):
-                        raincol = chirpsCollection(initialDate, endDate, aoi)
-                        
-                        # Mapping over the collection to extract data
-                        daily_precipitation = raincol.map(
-                            lambda img: ee.Feature(
-                                aoi,
-                                {
-                                    "date": img.date().format("YYYY-MM-dd"),
-                                    "precipitation": img.reduceRegion(
-                                        reducer=ee.Reducer.mean(),
-                                        geometry=aoi,
-                                        scale=30
-                                    ).get("precipitation"),
-                                }
-                            )
-                        )
-
-                        # Convert to python list
-                        daily_list = daily_precipitation.getInfo()["features"]
-                        
-                        # Extracting dates & precipitation values
-                        dates = [entry["properties"]["date"] for entry in daily_list]
-                        values = [entry["properties"]["precipitation"] for entry in daily_list]
-
-                        # Create a DataFrame
-                        rdf = pd.DataFrame({"Date": dates, "Precipitation": values})
-                        return rdf
-
-                    # Fetch precipitation data
-                    rdf = get_precipitation_data(str_initial_start_date, str_initial_end_date, geometry_aoi)
-
-                    # Display the DataFrame in Streamlit
-                    st.dataframe(
-                        rdf,
-                        column_config={
-                            "Date": "Date",
-                            "Precipitation": st.column_config.BarChartColumn(
-                                "Rainfall (mm)", y_min=0, y_max=100, width="medium", help='Precipitation (mm)'
-                            ),
-                        },
-                        hide_index=True,
+                # Define CHIRPS image collection function
+                def chirpsCollection(initialDate, updatedDate, aoi):
+                    chirps = (
+                        ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
+                        .filterDate(initialDate, updatedDate)
+                        .filterBounds(aoi)
+                        .select("precipitation")
                     )
+                    return chirps
+
+                # Generate precipitation data for full months
+                def full_month_precipitation(initialDate, endDate, aoi):
+                    # Convert input dates to datetime objects
+                    initial_date = datetime.strptime(initialDate, "%Y-%m-%d")
+                    end_date = datetime.strptime(endDate, "%Y-%m-%d")
+
+                    # Determine start and end of the full months
+                    start_of_month = initial_date.replace(day=1)
+                    _, end_of_month_day = calendar.monthrange(end_date.year, end_date.month)
+                    end_of_month = end_date.replace(day=end_of_month_day)
+
+                    # Ensure non-duplicate timeline
+                    if initial_date.month == end_date.month and initial_date.year == end_date.year:
+                        # If same month/year, use full month only once
+                        start_of_month = initial_date.replace(day=1)
+                        end_of_month = end_date.replace(day=end_of_month_day)
+
+                    # Generate precipitation data
+                    raincol = chirpsCollection(start_of_month.strftime("%Y-%m-%d"), end_of_month.strftime("%Y-%m-%d"), aoi)
+                    
+                    daily_precipitation = raincol.map(
+                        lambda img: ee.Feature(
+                            aoi,
+                            {
+                                "date": img.date().format("YYYY-MM-dd"),
+                                "precipitation": img.reduceRegion(
+                                    reducer=ee.Reducer.mean(),
+                                    geometry=aoi,
+                                    scale=30
+                                ).get("precipitation"),
+                            }
+                        )
+                    )
+
+                    # Convert to Python list
+                    daily_list = daily_precipitation.getInfo()["features"]
+                    
+                    # Extracting dates & precipitation values
+                    dates = [entry["properties"]["date"] for entry in daily_list]
+                    values = [entry["properties"]["precipitation"] for entry in daily_list]
+
+                    # Create a DataFrame
+                    rdf = pd.DataFrame({"Date": dates, "Precipitation": values})
+                    return rdf
+
+
+                # Fetch precipitation data
+                rdf = full_month_precipitation(str_initial_start_date, str_updated_end_date, geometry_aoi)
+
+                # Display the DataFrame in Streamlit
+                st.dataframe(
+                    rdf,
+                    column_config={
+                        "Date": "Date",
+                        "Precipitation": st.column_config.ProgressColumn(
+                            "Rainfall (mm)", format="mm %f", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
+                        ),
+                    },
+                    hide_index=True,
+                )
 
 
     ##### Miscs Infos - START
