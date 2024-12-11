@@ -879,7 +879,7 @@ def main():
                     values = [entry["properties"]["precipitation"] for entry in daily_list]
 
                     # Create a DataFrame
-                    rdf = pd.DataFrame({"Date": dates, "Precipitation": values})
+                    rdf = pd.DataFrame({"Date": dates, "Precipitation": [round(value, 2) if value is not None else None for value in values]})
                     return rdf
 
 
@@ -892,7 +892,7 @@ def main():
                     column_config={
                         "Date": "Date",
                         "Precipitation": st.column_config.ProgressColumn(
-                            "Rainfall (mm)", format="mm %f", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
+                            "Rainfall (mm)", format="  mm %f", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
                         ),
                     },
                     hide_index=True,
