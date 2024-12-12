@@ -892,7 +892,7 @@ def main():
                     column_config={
                         "Date": "Date",
                         "Precipitation": st.column_config.ProgressColumn(
-                            "Rainfall (mm)", format="  mm %f", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
+                            "Rainfall (mm)", format=" %f mm", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
                         ),
                     },
                     hide_index=True,
