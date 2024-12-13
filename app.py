@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import json
 import pandas as pd
 import calendar
+import altair as alt
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -897,6 +898,28 @@ def main():
                     },
                     hide_index=True,
                 )
+
+                # Chart visualization
+                def precipitation_chart(rdf):
+                    # Converting Date column to compatible Altair datetime
+                    rdf["Date"] = pd.to_datetime(rdf["Date"])
+
+                    # Altair graph: bar chart with a line chart
+                    viz_chart = alt.Chart(rdf).mark_bar(color="#88c0d0").encode(
+                        x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
+                        y=alt.Y("Precipitation:Q", axis=alt.Axis(title="Precipitation (mm)")),
+                        tooltip=["Date:T", "Precipitation:Q"]
+                    ) + alt.Chart(rdf).mark_line(color="#004dc6", point=True, interpolate="monotone").encode(
+                        x="Date:T",
+                        y="Precipitation:Q"
+                    ).properties(
+                        title="Daily Precipitation"
+                    )
+                    return viz_chart
+
+                # Generate and display Altair chart
+                viz_chart = precipitation_chart(rdf)
+                st.altair_chart(viz_chart, use_container_width=True)
 
 
     ##### Miscs Infos - START
