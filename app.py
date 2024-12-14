@@ -883,12 +883,15 @@ def main():
                     rdf = pd.DataFrame({"Date": dates, "Precipitation": [round(value, 2) if value is not None else None for value in values]})
                     return rdf
 
-
+                # Data frame / viz layout
+                col5, col6 = st.columns([1,2])
+                
                 # Fetch precipitation data
                 rdf = full_month_precipitation(str_initial_start_date, str_updated_end_date, geometry_aoi)
 
                 # Display the DataFrame in Streamlit
-                st.dataframe(
+                col5.subheader("Data table:")
+                col5.dataframe(
                     rdf,
                     column_config={
                         "Date": "Date",
@@ -896,7 +899,7 @@ def main():
                             "Rainfall (mm)", format=" %f mm", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
                         ),
                     },
-                    hide_index=True,
+                    hide_index=True, width=400, height=420
                 )
 
                 # Chart visualization
@@ -907,19 +910,21 @@ def main():
                     # Altair graph: bar chart with a line chart
                     viz_chart = alt.Chart(rdf).mark_bar(color="#88c0d0").encode(
                         x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
-                        y=alt.Y("Precipitation:Q", axis=alt.Axis(title="Precipitation (mm)")),
+                        y=alt.Y("Precipitation:Q", axis=alt.Axis(title=None, ticks=True, tickMinStep=1)),
                         tooltip=["Date:T", "Precipitation:Q"]
                     ) + alt.Chart(rdf).mark_line(color="#004dc6", point=True, interpolate="monotone").encode(
                         x="Date:T",
                         y="Precipitation:Q"
                     ).properties(
-                        title="Daily Precipitation"
+                        title="Precipitation (mm)",
+                        height=500
                     )
                     return viz_chart
 
                 # Generate and display Altair chart
                 viz_chart = precipitation_chart(rdf)
-                st.altair_chart(viz_chart, use_container_width=True)
+                col6.subheader("Daily Precipitation")
+                col6.altair_chart(viz_chart, use_container_width=True)
 
 
     ##### Miscs Infos - START
