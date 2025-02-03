@@ -1,4 +1,4 @@
-#### _Please make your PRs to the dev branch, not main._
+#### _Please make your PRs to the `streamlit-dev` branch, not `streamlit-app` branch._
 # Pull Request Description
 
 Please include a clear and concise summary of the changes you made. Make sure to point which issue this relates to.
@@ -30,6 +30,7 @@ If neededn you can use a quick comparatif table to show changes:
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
+- [ ] I made a PullRequest against the `streamlit-dev` branch not `streamlit-app` branch.
 
 > NOTE: Please delete any section or elements of the PR template that do not apply to your PR submission (including this very note) while maintaining the structure of the template.
 
