@@ -940,7 +940,53 @@ def main():
                     )
                     return temp_collection
 
+                # Generate temperature data for full months
+                def full_month_temperature(initialDate, endDate, aoi):
+                    # Convert input dates to datetime objects
+                    initial_date = datetime.strptime(initialDate, "%Y-%m-%d")
+                    end_date = datetime.strptime(endDate, "%Y-%m-%d")
 
+                    # Determine start and end of the full months
+                    start_of_month = initial_date.replace(day=1)
+                    _, end_of_month_day = calendar.monthrange(end_date.year, end_date.month)
+                    end_of_month = end_date.replace(day=end_of_month_day)
+
+                    # Avoiding duplicate timespan
+                    if initial_date.month == end_date.month and initial_date.year == end_date.year:
+                        start_of_month = initial_date.replace(day=1)
+                        end_of_month = end_date.replace(day=end_of_month_day)
+
+                    # Generate temperature data
+                    tempcol = temperatureCollection(start_of_month.strftime("%Y-%m-%d"), end_of_month.strftime("%Y-%m-%d"), aoi)
+
+                    daily_temperature = tempcol.map(
+                        lambda img: ee.Feature(
+                            aoi,
+                            {
+                                "date": img.date().format("YYYY-MM-dd"),
+                                "temperature": img.reduceRegion(
+                                    reducer=ee.Reducer.mean(),
+                                    geometry=aoi,
+                                    scale=11132
+                                ).get("temperature_2m"),
+                            }
+                        )
+                    )
+
+                    # Convert to Python list
+                    daily_temp_list = daily_temperature.getInfo()["features"]
+
+                    # Extracting dates & temperature values (scaled to °C if necessary)
+                    dates_t = [entry["properties"]["date"] for entry in daily_temp_list]
+                    values_t = [entry["properties"]["temperature"] for entry in daily_temp_list]
+                    scaled_values = [round(value - 273.15, 2) if value is not None else None for value in values_t]  # Scale values from dataset
+
+                    # Create a DataFrame
+                    temp_df = pd.DataFrame({"Date": dates_t, "Temperature": scaled_values})
+
+                    # Remove duplicates by averaging values for each date
+                    temp_df = temp_df.groupby("Date", as_index=False).mean()
+                    return temp_df
 
     ##### Miscs Infos - START
     with st.container():
