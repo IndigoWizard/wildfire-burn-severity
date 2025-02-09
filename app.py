@@ -927,6 +927,21 @@ def main():
                 col6.altair_chart(viz_chart, use_container_width=True)
 
 
+
+            #### Temperature calculation - START
+
+                # Define the Temperature Image Collection function
+                def temperatureCollection(initialDate, updatedDate, aoi):
+                    temp_collection = (
+                        ee.ImageCollection("ECMWF/ERA5_LAND/HOURLY")  # GCOM-C/SGLI dataset
+                        .filterDate(initialDate, updatedDate)
+                        .filterBounds(aoi)
+                        .select("temperature_2m")  # Correct band: Average Land Surface Temperature
+                    )
+                    return temp_collection
+
+
+
     ##### Miscs Infos - START
     with st.container():
         st.divider()
