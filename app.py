@@ -926,6 +926,7 @@ def main():
                 col6.subheader("Daily Precipitation")
                 col6.altair_chart(viz_chart, use_container_width=True)
 
+            #### Precipitation Claculation - END
 
 
             #### Temperature calculation - START
@@ -987,6 +988,53 @@ def main():
                     # Remove duplicates by averaging values for each date
                     temp_df = temp_df.groupby("Date", as_index=False).mean()
                     return temp_df
+
+
+                # Data frame / visualization layout
+                col5, col6 = st.columns([1, 2])
+
+                # Fetch temperature data
+                temp_df = full_month_temperature(str_initial_start_date, str_updated_end_date, geometry_aoi)
+
+                # Display the DataFrame in Streamlit
+                col5.subheader("Temperature Data Table:")
+                col5.dataframe(
+                    temp_df,
+                    column_config={
+                        "Date": "Date",
+                        "Temperature": st.column_config.NumberColumn(
+                            "Temperature (°C)", format="%.2f °C", min_value=-50, max_value=50, width="medium", help="Temperature in Celsius"
+                        ),
+                    },
+                    hide_index=True, width=400, height=420
+                )
+
+                # Chart visualization
+                def temperature_chart(temp_df):
+                    # Converting Date column to compatible Altair datetime
+                    temp_df["Date"] = pd.to_datetime(temp_df["Date"])
+
+                    # Altair graph: bar chart with a line chart
+                    viz_chart = alt.Chart(temp_df).mark_bar(color="#e65780").encode(
+                        x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
+                        y=alt.Y("Temperature:Q", axis=alt.Axis(title=None, ticks=True, tickMinStep=1)),
+                        tooltip=["Date:T", "Temperature:Q"]
+                    ) + alt.Chart(temp_df).mark_line(color="#e63946", point=True, interpolate="monotone").encode(
+                        x="Date:T",
+                        y="Temperature:Q"
+                    ).properties(
+                        title="Daily Temperature (°C)",
+                        height=500
+                    )
+                    return viz_chart
+
+                # Generate and display Altair chart
+                temp_viz_chart = temperature_chart(temp_df)
+                col6.subheader("Daily Temperature")
+                col6.altair_chart(temp_viz_chart, use_container_width=True)
+
+            #### Temperature calculation - END
+
 
     ##### Miscs Infos - START
     with st.container():
