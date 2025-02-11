@@ -926,6 +926,115 @@ def main():
                 col6.subheader("Daily Precipitation")
                 col6.altair_chart(viz_chart, use_container_width=True)
 
+            #### Precipitation Claculation - END
+
+
+            #### Temperature calculation - START
+
+                # Define the Temperature Image Collection function
+                def temperatureCollection(initialDate, updatedDate, aoi):
+                    temp_collection = (
+                        ee.ImageCollection("ECMWF/ERA5_LAND/HOURLY")  # GCOM-C/SGLI dataset
+                        .filterDate(initialDate, updatedDate)
+                        .filterBounds(aoi)
+                        .select("temperature_2m")  # Correct band: Average Land Surface Temperature
+                    )
+                    return temp_collection
+
+                # Generate temperature data for full months
+                def full_month_temperature(initialDate, endDate, aoi):
+                    # Convert input dates to datetime objects
+                    initial_date = datetime.strptime(initialDate, "%Y-%m-%d")
+                    end_date = datetime.strptime(endDate, "%Y-%m-%d")
+
+                    # Determine start and end of the full months
+                    start_of_month = initial_date.replace(day=1)
+                    _, end_of_month_day = calendar.monthrange(end_date.year, end_date.month)
+                    end_of_month = end_date.replace(day=end_of_month_day)
+
+                    # Avoiding duplicate timespan
+                    if initial_date.month == end_date.month and initial_date.year == end_date.year:
+                        start_of_month = initial_date.replace(day=1)
+                        end_of_month = end_date.replace(day=end_of_month_day)
+
+                    # Generate temperature data
+                    tempcol = temperatureCollection(start_of_month.strftime("%Y-%m-%d"), end_of_month.strftime("%Y-%m-%d"), aoi)
+
+                    daily_temperature = tempcol.map(
+                        lambda img: ee.Feature(
+                            aoi,
+                            {
+                                "date": img.date().format("YYYY-MM-dd"),
+                                "temperature": img.reduceRegion(
+                                    reducer=ee.Reducer.mean(),
+                                    geometry=aoi,
+                                    scale=11132
+                                ).get("temperature_2m"),
+                            }
+                        )
+                    )
+
+                    # Convert to Python list
+                    daily_temp_list = daily_temperature.getInfo()["features"]
+
+                    # Extracting dates & temperature values (scaled to °C if necessary)
+                    dates_t = [entry["properties"]["date"] for entry in daily_temp_list]
+                    values_t = [entry["properties"]["temperature"] for entry in daily_temp_list]
+                    scaled_values = [round(value - 273.15, 2) if value is not None else None for value in values_t]  # Scale values from dataset
+
+                    # Create a DataFrame
+                    temp_df = pd.DataFrame({"Date": dates_t, "Temperature": scaled_values})
+
+                    # Remove duplicates by averaging values for each date
+                    temp_df = temp_df.groupby("Date", as_index=False).mean()
+                    return temp_df
+
+
+                # Data frame / visualization layout
+                col5, col6 = st.columns([1, 2])
+
+                # Fetch temperature data
+                temp_df = full_month_temperature(str_initial_start_date, str_updated_end_date, geometry_aoi)
+
+                # Display the DataFrame in Streamlit
+                col5.subheader("Temperature Data Table:")
+                col5.dataframe(
+                    temp_df,
+                    column_config={
+                        "Date": "Date",
+                        "Temperature": st.column_config.NumberColumn(
+                            "Temperature (°C)", format="%.2f °C", min_value=-50, max_value=50, width="medium", help="Temperature in Celsius"
+                        ),
+                    },
+                    hide_index=True, width=400, height=420
+                )
+
+                # Chart visualization
+                def temperature_chart(temp_df):
+                    # Converting Date column to compatible Altair datetime
+                    temp_df["Date"] = pd.to_datetime(temp_df["Date"])
+
+                    # Altair graph: bar chart with a line chart
+                    viz_chart = alt.Chart(temp_df).mark_bar(color="#e65780").encode(
+                        x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
+                        y=alt.Y("Temperature:Q", axis=alt.Axis(title=None, ticks=True, tickMinStep=1)),
+                        tooltip=["Date:T", "Temperature:Q"]
+                    ) + alt.Chart(temp_df).mark_line(color="#e63946", point=True, interpolate="monotone").encode(
+                        x="Date:T",
+                        y="Temperature:Q"
+                    ).properties(
+                        title="Daily Temperature (°C)",
+                        height=500
+                    )
+                    return viz_chart
+
+                # Generate and display Altair chart
+                temp_viz_chart = temperature_chart(temp_df)
+                col6.subheader("Daily Temperature")
+                col6.altair_chart(temp_viz_chart, use_container_width=True)
+
+            #### Temperature calculation - END
+
 
     ##### Miscs Infos - START
     with st.container():
