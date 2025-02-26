@@ -1,3 +1,9 @@
+"""
+Original Project Author: IndigoWizard, Sep 24, 2022.
+Project Name: Wildfire Burn Severity Analysis
+License: GPL-3.0 (See LICENSE file for details)
+"""
+
 import streamlit as st
 import ee
 from ee import oauth
@@ -30,41 +36,64 @@ st.markdown(
 <style>
     /* Header*/
     /* Dark theme version */
-    .st-emotion-cache-h4xjwg.ezrtsby2 {
+    .st-emotion-cache-h4xjwg, .st-emotion-cache-12fmjuu {
         height: 1rem;
         background: none;
     }
-    /* Light theme version */
-    .st-emotion-cache-12fmjuu.ezrtsby2 {
-        height: 1rem;
-        background: none;
+    /*Header banner*/
+    .st-emotion-cache-ropwps.egexzqm2 h1#wildfire-burn-severity-analysis {
+        font-size: 1.75rem;
     }
 
-    /* Smooth scrolling*/
-    .main {
+    /*Main: Smooth scrolling*/
+    .stMain.st-emotion-cache-bm2z3a.eht7o1d1 {
         scroll-behavior: smooth;
     }
     
     /* main app body with less padding*/
-    .st-emotion-cache-1jicfl2.ea3mdgi5 {
-        padding-block: 0;
-        position: relative;
+    .st-emotion-cache-t1wise.eht7o1d4 {
+        padding: 0.2rem 2rem;
+    }
+
+    /* main app body with less padding in different screen size*/
+    @media (min-width: calc(736px + 8rem)) {
+        .st-emotion-cache-t1wise {
+            padding: 0.2rem 2rem;
+        }
     }
 
     /* ******* Sidebar ******* */
     /* Main container */
-    .st-emotion-cache-qeahdt.eczjsme9 {
-        padding: 0 1rem;
+    /*Dark theme - Light theme class names*/
+    .stSidebar.st-emotion-cache-1wqrzgl.e1c29vlm0, .stSidebar.st-emotion-cache-vmpjyt.e1c29vlm0 {
+        min-width: 280px;
+        max-width: fit-content;
+    }
+
+    /*Light theme sidbar background color*/
+    .stSidebar.st-emotion-cache-vmpjyt, .stSidebar.st-emotion-cache-wgfafi.e1c29vlm0 {
+        background-color: rgb(38, 39, 48);
+        color: #fafafa;
+    }
+    /*sidebar light theme mobile view*/
+
+    @media (max-width: 576px) {
+        .stSidebar.st-emotion-cache-g8bi16.e1c29vlm0 {
+            background-color: rgb(38, 39, 48);
+            color: #fafafa;
+        }
+        .stVerticalBlock.st-emotion-cache-10e86g4.e6rk8up3, .stVerticalBlock.st-emotion-cache-1vn87qs.e6rk8up3 {
+            gap: 1.6rem;
+        }
+    }
+
+
+    /*Sidebar header*/
+    .st-emotion-cache-kgpedg {
+        padding: 0;
     }
     .st-emotion-cache-1mi2ry5.eczjsme6 {
         height: 0;
-    }
-    
-    .st-emotion-cache-12skds7 {
-        height: 0;
-    }
-    .st-emotion-cache-1gv3huu.eczjsme16 {
-        background-color: rgb(240, 242, 246);
     }
 
     /* Logo */
@@ -78,8 +107,9 @@ st.markdown(
     }
 
     /*Sidebar : image*/
-    .css-1kyxreq {
-        display: block !important;
+    .st-emotion-cache-vew1uq.e6rk8up1 {
+        display: flex;
+        justify-content: center;
     }
 
     /*Sidebar : Navigation list*/
@@ -114,12 +144,47 @@ st.markdown(
         gap: 1rem;
     }
 
+    /*Socials flex properties: dark & light theme*/
+    .st-emotion-cache-1espb9k p, .st-emotion-cache-1mw54nq p {
+        display: flex;
+        flex-direction: row;
+        justify-content: start;
+        gap: 0.8rem;
+        padding-inline: 10px;
+    }
+    
+    /* Linkedin logo*/
+    .st-emotion-cache-1espb9k.egexzqm0 p a img, .st-emotion-cache-1mw54nq.egexzqm0 p a img {
+        width: 32px;
+    }
+
+    /*GitHub logo:  Dark Theme - Light Theme*/
+    .st-emotion-cache-14j6x93:nth-child(6) > div:nth-child(1) > div:nth-child(1) > p:nth-child(1) > a:nth-child(2) > img:nth-child(1) {
+        background-color: #26273040;
+        border-radius: 50%;
+    }
+    /*GitHub logo:  Dark Theme - Light Theme - Mobile version*/
+    div.st-emotion-cache-vew1uq:nth-child(6) > div:nth-child(1) > div:nth-child(1) > p:nth-child(1) > a:nth-child(2) > img:nth-child(1) {
+        background-color: #26273040;
+        border-radius: 50%;
+    }
+
+    /*Main body Title*/
+    .st-emotion-cache-ropwps.egexzqm2 h1#wildfire-burn-severity-analysis, .st-emotion-cache-18netey.egexzqm2 h1#wildfire-burn-severity-analysis {
+        font-size: 2rem;
+        padding: 1.8rem 0 0.5rem;
+    }
+    
     /* ******* Upload Section ******* */
     /* ***** Upload info box */
     /* Light theme version */
-    .st-emotion-cache-1gulkj5 {
+    .st-emotion-cache-1gulkj5.e1blfcsg0 {
         background-color: rgb(215, 210, 225);
         color: rgb(40, 40, 55);
+        display: flex;
+        flex-direction: column;
+        align-items: inherit;
+        font-size: 14px;
     }
 
     /* ***** Upload SVG: Mobile view */
@@ -136,7 +201,7 @@ st.markdown(
     }
     
     /* ***** Upload button: dark theme*/
-    .st-emotion-cache-1erivf3.e1b2p2ww15 {
+    .st-emotion-cache-1erivf3.e1blfcsg0 {
         display: flex;
         flex-direction: column;
         align-items: inherit;
@@ -353,7 +418,7 @@ def main():
             """)
     
         st.subheader("Contact:")
-        st.markdown("[![LinkedIn](https://static.licdn.com/sc/h/8s162nmbcnfkg7a0k8nq9wwqo)](https://linkedin.com/in/ahmed-islem-mokhtari) [![GitHub](https://github.githubassets.com/favicons/favicon-dark.png)](https://github.com/IndigoWizard) [![Medium](https://miro.medium.com/1*m-R_BkNf1Qjr1YbyOIJY2w.png)](https://medium.com/@Indigo.Wizard/mt-chenoua-forest-fires-analysis-with-remote-sensing-614681f468e9)")
+        st.markdown("[![LinkedIn](https://content.linkedin.com/content/dam/me/brand/en-us/brand-home/logos/In-Blue-Logo.png.original.png)](https://linkedin.com/in/ahmed-islem-mokhtari) [![GitHub](https://github.githubassets.com/favicons/favicon-dark.png)](https://github.com/IndigoWizard) [![Medium](https://miro.medium.com/1*m-R_BkNf1Qjr1YbyOIJY2w.png)](https://medium.com/@Indigo.Wizard/mt-chenoua-forest-fires-analysis-with-remote-sensing-614681f468e9)")
 
         st.caption("ʕ •ᴥ•ʔ Star⭐the [project on GitHub](https://github.com/IndigoWizard/wildfire-burn-severity/)!")
 
@@ -639,9 +704,12 @@ def main():
 
     #### Legend - END
 
-    #### Area Calculation - START
+    #### Analysis Report - START
     st.write("#### Analysis Report")
     with st.form("report_form"):
+    
+        #### Area Calculation - START
+
         # geojson area: (geometry area)
         geometry_area = geojson_area(geometry_aoi)
 
@@ -822,9 +890,9 @@ def main():
                                 }
                             }
                         )
-    #### Area Calculation - END
+        #### Area Calculation - END
 
-            #### Precipitation Claculation - START
+        #### Precipitation Claculation - START
            
             with st.container():
 
@@ -926,10 +994,10 @@ def main():
                 col6.subheader("Daily Precipitation")
                 col6.altair_chart(viz_chart, use_container_width=True)
 
-            #### Precipitation Claculation - END
+        #### Precipitation Claculation - END
 
 
-            #### Temperature calculation - START
+        #### Temperature calculation - START
 
                 # Define the Temperature Image Collection function
                 def temperatureCollection(initialDate, updatedDate, aoi):
@@ -1032,8 +1100,11 @@ def main():
                 temp_viz_chart = temperature_chart(temp_df)
                 col6.subheader("Daily Temperature")
                 col6.altair_chart(temp_viz_chart, use_container_width=True)
+            
+        #### Temperature calculation - END
+    
+    #### Analysis Report - END
 
-            #### Temperature calculation - END
 
 
     ##### Miscs Infos - START
