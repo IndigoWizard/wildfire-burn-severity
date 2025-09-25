@@ -1,38 +1,55 @@
-#### _Please make your PRs to the `streamlit-dev` branch, not `streamlit-app` branch._
 # Pull Request Description
 
-Please include a clear and concise summary of the changes you made. Make sure to point which issue this relates to.
+Please include a clear and concise summary of your changes.
+Link the related issue(s) (e.g., `Fixes #42`, `Closes #101`).
 
+---
 
-## Info
-Check with [x] what's relevant. Please delete options that are not relevant.
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Enhancement (non-breaking change which improves existing functionality/code)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] This change requires a documentation update
-- [ ] This change require new dependencies (List any main dependencies that are required for this change.)
+## 📋 Type of Change
 
+Mark with an [x] what applies: 
 
-## Preview
-Use JPG/PNG, GIF or MP4 visuals to dipslay/demo your addition if it applies.
+- [ ] 🐛 Bug fix (non-breaking change fixing an issue)
+- [ ] 🔧 Enhancement (improving existing functionality/code)
+- [ ] ✨ New feature (non-breaking change adding functionality)
+- [ ] 💥 Breaking change (changes that cause existing functionality to not work)
+- [ ] 📖 Documentation update
+- [ ] 📦 New dependency (list below)
 
-If neededn you can use a quick comparatif table to show changes:
-| Before           | After            |
+If new dependencies were added, list them here:
+
+---
+
+## 🖼️ Preview (if applicable)
+
+- Add screenshots, GIFs, or videos to demonstrate your changes.
+- You may also use a comparison table if helpful:
+
+| Before | After |
 | ---------------- | ---------------- |
-| PNG/GIF link     | PNG/GIF link     |
-| Text description | Text description |
+| Image / Text | Image / Text |
 
+---
 
-## Checklist:
+## ✅ Checklist
 
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] I made a PullRequest against the `streamlit-dev` branch not `streamlit-app` branch.
+Before submitting your PR, confirm the following:
 
-> NOTE: Please delete any section or elements of the PR template that do not apply to your PR submission (including this very note) while maintaining the structure of the template.
+- [ ] My branch is based on **`streamlit-dev`** (not `streamlit-main`).
+- [ ] I made the Pull Request against the `streamlit-dev`.
+- [ ] I have tested the app locally and verified my changes.
+- [ ] I documented new/modified functionality in code or docs.
+- [ ] I gave my PR a clear and descriptive title.
+- [ ] I linked the relevant issue(s).
 
->Follow baby yoda's ![](https://raw.githubusercontent.com/IndigoWizard/Baby-Yoda-on-a-Trip/main/BabyYodaSprite.gif)
-rules at all times!
+---
+
+## 🌱 Notes
+
+You may add any context, follow-up ideas, or notes that you may need to clarify your PR.
+
+Please delete any section or elements of the PR template that do not apply to your PR submission (including this very note) while maintaining the structure of the template.  
+
+---
+
+![](https://raw.githubusercontent.com/IndigoWizard/Baby-Yoda-on-a-Trip/main/BabyYodaSprite.gif) “Follow this guide, you must.”

@@ -1,28 +1,72 @@
-# CONTRIBUTION guide
+# Contributing Guide
 
-All contribution is welcome (_adding features✨, bug fix🔧, bug report🐛, design✒️, documentation📝, fixing typos ...etc_).
+Thanks for considering contributing to **Wildfire Burn Severity Analysis App**!  
+All kinds of contributions are welcome (_✨ adding features, 🐛 bug fix and reports, 🎨 design, 📝 documentation, fixing typos ...etc_).
 
-Also baby yoda ![](https://raw.githubusercontent.com/IndigoWizard/Baby-Yoda-on-a-Trip/main/BabyYodaSprite.gif) says: "star the repo, you must" (in giberish of course but we just guess that's what he says... )
+Baby Yoda ![](https://raw.githubusercontent.com/IndigoWizard/Baby-Yoda-on-a-Trip/main/BabyYodaSprite.gif) reminds you:  
+"⭐ Star the repo, you must!". (in giberish of course but we just guess that's what he says... )
 
-## To contribute to this repo, please make sure to follow the rules.
-### Rules:
-- Always check repo's open ***[issues](https://github.com/IndigoWizard/wildfire-burn-severity/issues)*** to avoid duplicates, conflict and ambiguous work.
-- Open a new issue stating the subject of your upcoming contribution if no already existing open issue is related to the subject.
-- If it's a **one-time issue**, ask a maintainer to assign you to the issue before starting to work on it.
-- Always make sure your own forked repo is up to date with the original repo.
+---
 
-## Pull Requests
-- Make sure to push your PRs to the dev branch
-- Do not push your node modules folder.
-- Make sure you give your PR a clear discription and **meaningful title** of your contribution are requested.
-- Create a new branch for you contribution and name it relatively to its theme (e.g: **UI-dark-theme** )
-- Document your code, no one has time to figure out the meaning of your ancient rituals codes ...
-- Make sure your contribution don't break existing features.
-- Link the issue(s) you worked on in your pull request description.
-- Use visual displays (screenshots, pictures, videos) to express the new changes you added in your PR if you contributed to an issue that affects the looks, functions of the project.
+## 🗂️ How to Contribute
 
+1. **Check existing issues**  
+   - Look through [open issues](https://github.com/IndigoWizard/wildfire-burn-severity/issues) to avoid duplicates.  
+   - If your idea or bug isn’t listed, [open a new issue](https://github.com/IndigoWizard/wildfire-burn-severity/issues/new).  
 
-# Issues
-- Issues are labbeled to make it easier for contributors/mantainers to identify them.
-- Always check the existing issues to avoid conflict and duplicates.
-- Request to be assigned to an issue before you start working on it.
+2. **Get assigned**  
+   - If you want to work on an issue, ask the maintainer to assign you before you start.  
+
+3. **Fork & Sync**  
+   - Fork the repository.  
+   - Keep your fork in sync with `streamlit-dev` to avoid conflicts.  
+
+---
+
+## 🌱 Development Workflow
+
+This project uses **git-flow**:
+
+- `streamlit-main` → production branch  
+- `streamlit-dev` → active development branch  
+- `feature/name` → new feature branches (PR against `streamlit-dev`)  
+- `release/vX.Y.Z` → release preparation branches  
+- `hotfix/vX.Y.Z` → emergency fixes  
+
+👉 Always create your branch off `streamlit-dev`.  
+
+---
+
+## 🔀 Pull Requests
+
+- Open your PR against `streamlit-dev`, **not** `streamlit-main`.  
+- Use a clear, descriptive title.  
+- Link related issue(s) in the PR description.  
+- Provide **screenshots, GIFs, or videos** for UI/visual changes.  
+- Document your code, document your code, document your code.  
+- Ensure your changes don’t break existing features.  
+
+---
+
+## 🏷️ Issues
+
+- Issues are labeled to help contributors and maintainers prioritize.  
+- Before starting work, request to be assigned to the issue.  
+
+---
+
+## ✅ Checklist Before Submitting
+
+- [ ] My code follows the style guidelines of this project.  
+- [ ] I ran the app locally to verify my changes.  
+- [ ] I documented new/modified functionality.  
+- [ ] I based my branch on `streamlit-dev`.  
+
+---
+
+## 🙌 Final Note
+
+Don’t hesitate to ask questions or propose improvements.  
+
+And remember:  
+> Follow Baby Yoda’s rules at all times.  
