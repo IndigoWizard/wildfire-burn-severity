@@ -326,6 +326,21 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
+def get_ee_geometry(coordinates):
+    match coordinates:
+        case [m]:
+            return ee.Geometry.Point(coords=m).buffer(distance=1000).bounds()
+        case [m, n]:
+            (x1, y1), (x2, y2) = m, n
+            return ee.Geometry.BBox(west=min(x1, x2), south=min(y1, y2), east=max(x1, x2), north=max(y1, y2))
+        case _:
+            return ee.Geometry.MultiPoint(coords=coordinates).convexHull(maxError=10)
+
+def parse_csv_coordinates(file):
+    df = pd.read_csv(filepath_or_buffer=file, sep=None, engine='python', usecols=['latitude', 'longitude'])
+    df.columns = df.columns.str.lower()
+    return get_ee_geometry(coordinates=df[['longitude', 'latitude']].values.tolist())
+
 # Upload function
 last_uploaded_centroid = None
 def upload_files_proc(upload_files):
@@ -335,6 +350,22 @@ def upload_files_proc(upload_files):
     geometry_aoi_list = []
 
     for upload_file in upload_files:
+        file_name = getattr(upload_file, 'name').lower()
+        upload_file.seek(offset=0)
+
+        # Parse CSV file
+        if file_name.endswith(suffix='.csv'):
+            try:
+                csv_geom = parse_csv_coordinates(file=upload_file)
+                geometry_aoi_list.append(csv_geom)
+
+                # Update the last uploaded centroid
+                last_uploaded_centroid = csv_geom.centroid(maxError=1).getInfo()['coordinates']
+            except Exception as e:
+                print(e)
+            continue
+
+        # Parse GeoJSON file
         bytes_data = upload_file.read()
         geojson_data = json.loads(bytes_data)
 
