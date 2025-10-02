@@ -355,14 +355,11 @@ def upload_files_proc(upload_files):
 
         # Parse CSV file
         if file_name.endswith(suffix='.csv'):
-            try:
-                csv_geom = parse_csv_coordinates(file=upload_file)
-                geometry_aoi_list.append(csv_geom)
+            csv_geom = parse_csv_coordinates(file=upload_file)
+            geometry_aoi_list.append(csv_geom)
 
-                # Update the last uploaded centroid
-                last_uploaded_centroid = csv_geom.centroid(maxError=1).getInfo()['coordinates']
-            except Exception as e:
-                print(e)
+            # Update the last uploaded centroid
+            last_uploaded_centroid = csv_geom.centroid(maxError=1).getInfo()['coordinates']
             continue
 
         # Parse GeoJSON file
