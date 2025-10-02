@@ -17,6 +17,8 @@ import json
 import pandas as pd
 import calendar
 import altair as alt
+import fiona
+import tempfile
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -326,6 +328,14 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
+def parse_gpkg_coords_to_ee_geometry(file):
+    # load GPKG file data to fiona collection
+    with fiona.open(fp=file) as f:
+        # convert coordinate data to Google earth engine geometry multipolygon
+        return ee.Geometry.MultiPolygon(
+            [e['geometry']['coordinates'] for e in f if e['geometry']['type'] in ('Polygon', 'MultiPolygon')]
+        )
+
 # Upload function
 last_uploaded_centroid = None
 def upload_files_proc(upload_files):
@@ -335,6 +345,21 @@ def upload_files_proc(upload_files):
     geometry_aoi_list = []
 
     for upload_file in upload_files:
+        file_name = getattr(upload_file, 'name').lower()
+        upload_file.seek(offset=0)
+
+        # Parse GPKG file
+        if file_name.endswith('.gpkg'):
+            with tempfile.NamedTemporaryFile(suffix='.gpkg') as tmp:
+                tmp.write(upload_file.getbuffer())
+                geometry = parse_gpkg_coords_to_ee_geometry(file=file_name)
+            geometry_aoi_list.append(geometry)
+
+            # Update the last uploaded centroid
+            last_uploaded_centroid = geometry.centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+        # Parse GeoJSON file
         bytes_data = upload_file.read()
         geojson_data = json.loads(bytes_data)
 
