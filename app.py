@@ -337,9 +337,10 @@ def get_ee_geometry(coordinates):
             return ee.Geometry.MultiPoint(coords=coordinates).convexHull(maxError=10)
 
 def parse_csv_coordinates(file):
-    df = pd.read_csv(filepath_or_buffer=file, sep=None, engine='python', usecols=['latitude', 'longitude'])
-    df.columns = df.columns.str.lower()
-    return get_ee_geometry(coordinates=df[['longitude', 'latitude']].values.tolist())
+    col_names = [('lon', 'x'), ('lat', 'y')]  # potential column names (prefix) for polygon geometry coordinate data
+    df = pd.read_csv(filepath_or_buffer=file, sep=None, engine='python')  # load CSV file data to pandas dataframe
+    coord_cols = df[[next((c for i in i for c in df.columns if c.strip().lower().startswith(i))) for i in col_names]]
+    return get_ee_geometry(coordinates=coord_cols.values.tolist())
 
 # Upload function
 last_uploaded_centroid = None
