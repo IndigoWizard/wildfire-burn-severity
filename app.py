@@ -326,21 +326,15 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
-def get_ee_geometry(coordinates):
-    match coordinates:
-        case [m]:
-            return ee.Geometry.Point(coords=m).buffer(distance=1000).bounds()
-        case [m, n]:
-            (x1, y1), (x2, y2) = m, n
-            return ee.Geometry.BBox(west=min(x1, x2), south=min(y1, y2), east=max(x1, x2), north=max(y1, y2))
-        case _:
-            return ee.Geometry.MultiPoint(coords=coordinates).convexHull(maxError=10)
-
-def parse_csv_coordinates(file):
-    col_names = [('lon', 'x'), ('lat', 'y')]  # potential column names (prefix) for polygon geometry coordinate data
+def parse_csv_coords_to_ee_geometry(file):
+    # assume csv file contains polygon-specific cartesian coordinate data
+    col_names = [('lon', 'x'), ('lat', 'y')]  # potential column (prefix) names for polygon geometry coordinate data
     df = pd.read_csv(filepath_or_buffer=file, sep=None, engine='python')  # load CSV file data to pandas dataframe
-    coord_cols = df[[next((c for i in i for c in df.columns if c.strip().lower().startswith(i))) for i in col_names]]
-    return get_ee_geometry(coordinates=coord_cols.values.tolist())
+    coords_df = df[[next((c for i in i for c in df.columns if c.strip().lower().startswith(i))) for i in col_names]]
+
+    # convert coordinate data to Google earth engine geometry multipolygon
+    aoi = ee.Geometry.MultiPoint(coords=coords_df.values.tolist()).convexHull(maxError=1)
+    return ee.Geometry.MultiPolygon(coords=ee.List(arg=[aoi.coordinates()]))
 
 # Upload function
 last_uploaded_centroid = None
@@ -356,7 +350,7 @@ def upload_files_proc(upload_files):
 
         # Parse CSV file
         if file_name.endswith(suffix='.csv'):
-            csv_geom = parse_csv_coordinates(file=upload_file)
+            csv_geom = parse_csv_coords_to_ee_geometry(file=upload_file)
             geometry_aoi_list.append(csv_geom)
 
             # Update the last uploaded centroid
