@@ -15,10 +15,13 @@ from streamlit_elements import nivo
 from datetime import datetime, timedelta
 import json
 import pandas as pd
+import geopandas as gpd
 import calendar
 import altair as alt
 import fiona
 import tempfile
+import zipfile
+import os
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -328,6 +331,7 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
+# File Parser: GPKG (.gpkg)
 def parse_gpkg_coords_to_ee_geometry(file):
     # load GPKG file data to fiona collection
     with fiona.open(fp=file) as f:
@@ -336,7 +340,45 @@ def parse_gpkg_coords_to_ee_geometry(file):
             [e['geometry']['coordinates'] for e in f if e['geometry']['type'] in ('Polygon', 'MultiPolygon')]
         )
 
-# Upload function
+# File Parser: Zipped Shapefile (.shp)
+def parse_zip_shapefile(upload_file):
+    # creating a temporary directory
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = os.path.join(tmpdir, "uploaded.zip")
+
+        # write uploaded file to disk
+        with open(zip_path, "wb") as f:
+            f.write(upload_file.read())
+
+        # extract zipfile content
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            zf.extractall(tmpdir)
+
+        # parse for .shp file within extracted content
+        shp_files = [os.path.join(tmpdir, f) for f in os.listdir(tmpdir) if f.endswith(".shp")]
+        if not shp_files:
+            return None
+
+        #laod shapefile with geopandas
+        gdf = gpd.read_file(shp_files[0])
+
+        # convert geometry to match earth engine geometry object (as multipolygon)
+        geometry_list = []
+        for geom in gdf.geometry:
+            if geom.geom_type == "Polygon":
+                coords = [list(geom.exterior.coords)]
+                ee_geom = ee.Geometry.Polygon(coords)
+            elif geom.geom_type == "MultiPolygon":
+                coords = [list(p.exterior.coords) for p in geom.geoms]
+                ee_geom = ee.Geometry.MultiPolygon(coords)
+            else:
+                continue
+            geometry_list.append(ee_geom)
+
+        return geometry_list
+        
+
+# Main Upload Function
 last_uploaded_centroid = None
 def upload_files_proc(upload_files):
     # A global variable to track the latest geojson uploaded
@@ -345,21 +387,30 @@ def upload_files_proc(upload_files):
     geometry_aoi_list = []
 
     for upload_file in upload_files:
+        # Get the file name for extension detection
         file_name = getattr(upload_file, 'name').lower()
+        # reset file pointer if it was read before
         upload_file.seek(0)
 
-        # Parse GPKG file
+        # File Parser: Zipped GPKG (.gpkg)
         if file_name.endswith('.gpkg'):
             with tempfile.NamedTemporaryFile(suffix='.gpkg') as tmp:
                 tmp.write(upload_file.getbuffer())
-                geometry = parse_gpkg_coords_to_ee_geometry(file=tmp.name)
-            geometry_aoi_list.append(geometry)
-
-            # Update the last uploaded centroid
-            last_uploaded_centroid = geometry.centroid(maxError=1).getInfo()['coordinates']
+                gpkg_geoms = parse_gpkg_coords_to_ee_geometry(file=tmp.name)
+                if gpkg_geoms:
+                    geometry_aoi_list.append(gpkg_geoms)
+                    last_uploaded_centroid = gpkg_geoms.centroid(maxError=1).getInfo()['coordinates']
             continue
 
-        # Parse GeoJSON file
+        # File Parser: Zipped Shapefile (.shp)
+        if file_name.endswith(".zip"):
+            shp_geoms = parse_zip_shapefile(upload_file)
+            if shp_geoms:
+                geometry_aoi_list.extend(shp_geoms)
+                last_uploaded_centroid = shp_geoms[0].centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+        # File Parser: GeoJSON files
         bytes_data = upload_file.read()
         geojson_data = json.loads(bytes_data)
 
