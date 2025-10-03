@@ -346,13 +346,13 @@ def upload_files_proc(upload_files):
 
     for upload_file in upload_files:
         file_name = getattr(upload_file, 'name').lower()
-        upload_file.seek(offset=0)
+        upload_file.seek(0)
 
         # Parse GPKG file
         if file_name.endswith('.gpkg'):
             with tempfile.NamedTemporaryFile(suffix='.gpkg') as tmp:
                 tmp.write(upload_file.getbuffer())
-                geometry = parse_gpkg_coords_to_ee_geometry(file=file_name)
+                geometry = parse_gpkg_coords_to_ee_geometry(file=tmp.name)
             geometry_aoi_list.append(geometry)
 
             # Update the last uploaded centroid
