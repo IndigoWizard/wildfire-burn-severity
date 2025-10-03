@@ -12,7 +12,7 @@ import folium
 from streamlit_folium import folium_static
 from streamlit_elements import elements, mui
 from streamlit_elements import nivo
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import pandas as pd
 import geopandas as gpd
@@ -536,13 +536,26 @@ def main():
                 col2.success("Post-Fire NBR Date 📅")
                 updated_date = col2.date_input("updated", datetime(2023, 7, 27), label_visibility="collapsed")
 
-                time_range = 7
+                min_date = date(2015, 6, 27) # sentinel-2 data initial date - 27th June, 2015
+                today = date.today()
 
-                # Process initial date
-                str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
+                # Error handler for date inputs
+                if initial_date < min_date or updated_date < min_date:
+                    st.error("Oops, sentinel-2 data starts from June 27, 2015. Please pick a later date.")
+                elif initial_date > updated_date:
+                    st.error("Your pre-fire date is later than your post-fire date. Please swap them around or choose a different date.")
+                elif initial_date == updated_date:
+                    st.error("Pre-Fire date Post-Fire date can't be the same. Try choosing two different dates.")
+                elif initial_date > today or updated_date > today:
+                    st.error("We can’t fetch future data. Please select a date on or before today.")
+                else:
+                    time_range = 7
 
-                # Process updated date
-                str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
+                    # Process initial date
+                    str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
+
+                    # Process updated date
+                    str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
         
         #### User input section - END
 
