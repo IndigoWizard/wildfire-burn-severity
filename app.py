@@ -332,14 +332,29 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
 
 # File Parser: CSV (.csv)
 def parse_csv_coords_to_ee_geometry(file):
-    # assume csv file contains polygon-specific cartesian coordinate data
-    col_names = [('lon', 'x'), ('lat', 'y')]  # potential column (prefix) names for polygon geometry coordinate data
     df = pd.read_csv(filepath_or_buffer=file, sep=None, engine='python')  # load CSV file data to pandas dataframe
-    coords_df = df[[next((c for i in i for c in df.columns if c.strip().lower().startswith(i))) for i in col_names]]
+    df.columns = df.columns.str.strip().str.lower()
 
-    # convert coordinate data to Google earth engine geometry multipolygon
-    aoi = ee.Geometry.MultiPoint(coords=coords_df.values.tolist()).convexHull(maxError=1)
-    return ee.Geometry.MultiPolygon(coords=ee.List(arg=[aoi.coordinates()]))
+    # convert separate (x, y) cartesian columns spanning multiple rows to single row multi-array 'coordinates' column
+    df.rename(columns={next((c for c in df.columns if c.startswith('lon')), None): 'x'}, inplace=True)
+    df.rename(columns={next((c for c in df.columns if c.startswith('lat')), None): 'y'}, inplace=True)
+    if 'x' in df.columns and 'y' in df.columns:
+        df = df.sort_values(by='vertex_index', kind='mergesort')
+        df = (
+            df.groupby(by=['id'], sort=False)[['x', 'y']]
+            .apply(lambda g: json.dumps([[float(a), float(b)] for a, b in g.to_numpy()], ensure_ascii=False))
+            .reset_index(name='coordinates')[['id', 'coordinates']]
+        )
+
+    if not 'coordinates' in df.columns:
+        return None
+
+    # return either ee.Geometry Polygon or MultiPolygon object whether df contains single or multiple rows, respectively
+    return (
+        ee.Geometry.Polygon([json.loads(df['coordinates'].iloc[0])]) if df.shape[0] == 1 else
+        ee.Geometry.MultiPolygon([[json.loads(i)] for i in df['coordinates']])
+    )
+
 
 # File Parser: Zipped Shapefile (.shp)
 def parse_zip_shapefile(upload_file):
