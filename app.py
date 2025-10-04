@@ -21,6 +21,7 @@ import altair as alt
 import tempfile
 import zipfile
 import os
+import xml.etree.ElementTree as ET
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -330,6 +331,33 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
+# File Parser: KML (.kml)
+def parse_kml(upload_file):
+    upload_file.seek(0)
+    tree = ET.parse(upload_file)
+    # get the kml tree structure
+    root = tree.getroot()
+    # namespace
+    ns = {"kml": "http://www.opengis.net/kml/2.2"}
+
+    polygons = []
+    # getting coordinates from placemark in the kml
+    for placemark in root.findall(".//kml:Placemark", ns):
+        coords_text = placemark.find(".//kml:coordinates", ns)
+        if coords_text is not None:
+            coords_raw = coords_text.text.strip().split()
+            coords = []
+            for c in coords_raw:
+                lon, lat, *_ = map(float, c.split(","))
+                coords.append([lon, lat])
+
+            # ensuring closed polygon using same xy at start and end
+            if coords[0] != coords[-1]:
+                coords.append(coords[0])
+            polygons.append(ee.Geometry.Polygon([coords]))
+
+    return polygons
+
 # File Parser: Zipped Shapefile (.shp)
 def parse_zip_shapefile(upload_file):
     # creating a temporary directoruy
@@ -382,11 +410,20 @@ def upload_files_proc(upload_files):
         # reset file pointer if it was read before
         upload_file.seek(0)
 
+        # ZIP shapefile parser
         if file_name.endswith(".zip"):
             shp_geoms = parse_zip_shapefile(upload_file)
             if shp_geoms:
                 geometry_aoi_list.extend(shp_geoms)
                 last_uploaded_centroid = shp_geoms[0].centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+        # KML file parser
+        if file_name.endswith(".kml"):
+            kml_geoms = parse_kml(upload_file)
+            if kml_geoms:
+                geometry_aoi_list.extend(kml_geoms)
+                last_uploaded_centroid = kml_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
 
         # File Parser: GeoJSON files
