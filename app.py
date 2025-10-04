@@ -334,11 +334,10 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
 
 # File Parser: GPKG (.gpkg)
 def parse_gpkg_coords_to_ee_geometry(file):
-    # load GPKG file data to fiona collection
-    with fiona.open(fp=file) as f:
-        # convert coordinate data to Google earth engine geometry multipolygon
+    # load polygon/multipolygon data from GPKG file and convert earth engine Geometry object
+    with fiona.open(file) as bc:
         return ee.Geometry.MultiPolygon(
-            [e['geometry']['coordinates'] for e in f if e['geometry']['type'] in ('Polygon', 'MultiPolygon')]
+            [f['geometry']['coordinates'] for f in bc if f['geometry']['type'] in ('Polygon', 'MultiPolygon')]
         )
 
 # File Parser: KML (.kml)
@@ -422,12 +421,10 @@ def upload_files_proc(upload_files):
 
         # File Parser: GPKG files
         if file_name.endswith('.gpkg'):
-            with tempfile.NamedTemporaryFile(suffix='.gpkg') as tmp:
-                tmp.write(upload_file.getbuffer())
-                gpkg_geoms = parse_gpkg_coords_to_ee_geometry(file=tmp.name)
-                if gpkg_geoms:
-                    geometry_aoi_list.append(gpkg_geoms)
-                    last_uploaded_centroid = gpkg_geoms.centroid(maxError=1).getInfo()['coordinates']
+            gpkg_geoms = parse_gpkg_coords_to_ee_geometry(file=upload_file)
+            if gpkg_geoms:
+                geometry_aoi_list.append(gpkg_geoms)
+                last_uploaded_centroid = gpkg_geoms.centroid(maxError=1).getInfo()['coordinates']
             continue
 
         # File Parser: Zipped SHP files
