@@ -335,9 +335,16 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
 # File Parser: GPKG (.gpkg)
 def parse_gpkg_coords_to_ee_geometry(file):
     # load polygon/multipolygon data from GPKG file and convert earth engine Geometry object
-    with fiona.open(file) as bc:
+    with fiona.open(file) as f:
         return ee.Geometry.MultiPolygon(
-            [f['geometry']['coordinates'] for f in bc if f['geometry']['type'] in ('Polygon', 'MultiPolygon')]
+            [
+                c for e in f if e['geometry'] and e['geometry']['type'] in ('Polygon', 'MultiPolygon')
+                for c in (
+                    [e['geometry']['coordinates']]
+                    if e['geometry']['type'] == 'Polygon'
+                    else e['geometry']['coordinates']
+                )
+            ]
         )
 
 # File Parser: KML (.kml)
