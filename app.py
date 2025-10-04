@@ -12,7 +12,7 @@ import folium
 from streamlit_folium import folium_static
 from streamlit_elements import elements, mui
 from streamlit_elements import nivo
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import pandas as pd
 import geopandas as gpd
@@ -22,6 +22,7 @@ import fiona
 import tempfile
 import zipfile
 import os
+import xml.etree.ElementTree as ET
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -340,6 +341,33 @@ def parse_gpkg_coords_to_ee_geometry(file):
             [e['geometry']['coordinates'] for e in f if e['geometry']['type'] in ('Polygon', 'MultiPolygon')]
         )
 
+# File Parser: KML (.kml)
+def parse_kml(upload_file):
+    upload_file.seek(0)
+    tree = ET.parse(upload_file)
+    # get the kml tree structure
+    root = tree.getroot()
+    # namespace
+    ns = {"kml": "http://www.opengis.net/kml/2.2"}
+
+    polygons = []
+    # getting coordinates from placemark in the kml
+    for placemark in root.findall(".//kml:Placemark", ns):
+        coords_text = placemark.find(".//kml:coordinates", ns)
+        if coords_text is not None:
+            coords_raw = coords_text.text.strip().split()
+            coords = []
+            for c in coords_raw:
+                lon, lat, *_ = map(float, c.split(","))
+                coords.append([lon, lat])
+
+            # ensuring closed polygon using same xy at start and end
+            if coords[0] != coords[-1]:
+                coords.append(coords[0])
+            polygons.append(ee.Geometry.Polygon([coords]))
+
+    return polygons
+
 # File Parser: Zipped Shapefile (.shp)
 def parse_zip_shapefile(upload_file):
     # creating a temporary directory
@@ -392,7 +420,7 @@ def upload_files_proc(upload_files):
         # reset file pointer if it was read before
         upload_file.seek(0)
 
-        # File Parser: Zipped GPKG (.gpkg)
+        # File Parser: GPKG files
         if file_name.endswith('.gpkg'):
             with tempfile.NamedTemporaryFile(suffix='.gpkg') as tmp:
                 tmp.write(upload_file.getbuffer())
@@ -402,12 +430,20 @@ def upload_files_proc(upload_files):
                     last_uploaded_centroid = gpkg_geoms.centroid(maxError=1).getInfo()['coordinates']
             continue
 
-        # File Parser: Zipped Shapefile (.shp)
+        # File Parser: Zipped SHP files
         if file_name.endswith(".zip"):
             shp_geoms = parse_zip_shapefile(upload_file)
             if shp_geoms:
                 geometry_aoi_list.extend(shp_geoms)
                 last_uploaded_centroid = shp_geoms[0].centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+        # File Parser: KML files
+        if file_name.endswith(".kml"):
+            kml_geoms = parse_kml(upload_file)
+            if kml_geoms:
+                geometry_aoi_list.extend(kml_geoms)
+                last_uploaded_centroid = kml_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
 
         # File Parser: GeoJSON files
@@ -557,13 +593,26 @@ def main():
                 col2.success("Post-Fire NBR Date 📅")
                 updated_date = col2.date_input("updated", datetime(2023, 7, 27), label_visibility="collapsed")
 
-                time_range = 7
+                min_date = date(2015, 6, 27) # sentinel-2 data initial date - 27th June, 2015
+                today = date.today()
 
-                # Process initial date
-                str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
+                # Error handler for date inputs
+                if initial_date < min_date or updated_date < min_date:
+                    st.error("Oops, sentinel-2 data starts from June 27, 2015. Please pick a later date.")
+                elif initial_date > updated_date:
+                    st.error("Your pre-fire date is later than your post-fire date. Please swap them around or choose a different date.")
+                elif initial_date == updated_date:
+                    st.error("Pre-Fire date Post-Fire date can't be the same. Try choosing two different dates.")
+                elif initial_date > today or updated_date > today:
+                    st.error("We can’t fetch future data. Please select a date on or before today.")
+                else:
+                    time_range = 7
 
-                # Process updated date
-                str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
+                    # Process initial date
+                    str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
+
+                    # Process updated date
+                    str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
         
         #### User input section - END
 
