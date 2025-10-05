@@ -22,6 +22,9 @@ import tempfile
 import zipfile
 import os
 import xml.etree.ElementTree as ET
+import fiona
+from shapely.geometry import shape, mapping
+
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -331,6 +334,29 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
+# File Parser: GeoPackage (`.gpkg`)
+def parse_geopackage(upload_file):
+
+    # prepare geometry
+    geometry_list = []
+    
+    with fiona.open(upload_file) as fu:
+        for feat in fu:
+            # Convert geometry to a Shapely geometry object
+            geom = shape(feat["geometry"])
+
+            # handle basic polygon
+            if geom.geom_type == "Polygon":
+                geometry_list.append(ee.Geometry.Polygon(list(geom.exterior.coords)))
+            
+            # handle multipolygon
+            elif geom.geom_type == "MultiPolygon":
+                coords = [list(poly.exterior.coords) for poly in geom.geoms]
+                geometry_list.append(ee.Geometry.MultiPolygon(coords))
+    
+    return geometry_list
+
+
 # File Parser: CSV
 # column name variations found in CSV datasets 
 COLUMN_SYNONYMS = {
@@ -452,6 +478,24 @@ def upload_files_proc(upload_files):
         file_name = getattr(upload_file, 'name').lower()
         # reset file pointer if it was read before
         upload_file.seek(0)
+
+        # GeoPackage file parser
+        if file_name.endswith(".gpkg"):
+            # store gpkg into a temporary file for Fiona
+            with tempfile.NamedTemporaryFile(suffix=".gpkg", delete=False) as tmp:
+                # write uploaded file content to temp file
+                tmp.write(upload_file.getbuffer())
+                # write data to disk for readability
+                tmp.flush()
+                # parse temporary geopackage
+                gpkg_geoms = parse_geopackage(tmp.name)
+            
+            geometry_aoi_list.extend(gpkg_geoms)
+
+            if gpkg_geoms:
+                last_uploaded_centroid = gpkg_geoms[0].centroid(maxError=1).getInfo()["coordinates"]
+            
+            continue
 
         # CSV file parser
         if file_name.endswith(".csv"):
