@@ -331,6 +331,49 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
+# File Parser: CSV
+# column name variations found in CSV datasets 
+COLUMN_SYNONYMS = {
+    "x": ["x", "ln", "lon", "lng", "longitude"],
+    "y": ["y", "lt", "lat", "latitude"]
+}
+
+# finding coordinates colomns
+def find_column(df, possible_col_name):
+    for c in possible_col_name:
+        if c in df.columns:
+            return c
+    return None
+
+# main csv parse function
+def parse_csv(upload_file):
+    df = pd.read_csv(upload_file)
+    df.columns = df.columns.str.lower().str.strip()
+
+    # prepare geometry
+    geometry_list = []
+
+    # single-row polygon coordinates
+    if "coordinates" in df.columns:
+        for _, row in df.iterrows():
+            coords = json.loads(row["coordinates"])
+            geometry_list.append(ee.Geometry.Polygon(coords))
+        return geometry_list
+
+    # multirow polygon coordinates
+    x_col = find_column(df, COLUMN_SYNONYMS["x"])
+    y_col = find_column(df, COLUMN_SYNONYMS["y"])
+
+    for _, group in df.groupby("id"):
+        coords = group.sort_values("vertex_index")[[x_col, y_col]].values.tolist()
+        # always check if  the polygon coords close the shape and fix it
+        if coords[0] != coords[-1]:
+            coords.append(coords[0])
+        geometry_list.append(ee.Geometry.Polygon(coords))
+
+    return geometry_list
+
+
 # File Parser: KML (.kml)
 def parse_kml(upload_file):
     upload_file.seek(0)
@@ -409,6 +452,13 @@ def upload_files_proc(upload_files):
         file_name = getattr(upload_file, 'name').lower()
         # reset file pointer if it was read before
         upload_file.seek(0)
+
+        # CSV file parser
+        if file_name.endswith(".csv"):
+            csv_geoms = parse_csv(upload_file)
+            geometry_aoi_list.extend(csv_geoms)
+            last_uploaded_centroid = csv_geoms[-1].centroid(maxError=1).getInfo()["coordinates"]
+            continue
 
         # ZIP shapefile parser
         if file_name.endswith(".zip"):
