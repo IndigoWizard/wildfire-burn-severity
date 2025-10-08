@@ -12,11 +12,19 @@ import folium
 from streamlit_folium import folium_static
 from streamlit_elements import elements, mui
 from streamlit_elements import nivo
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import pandas as pd
+import geopandas as gpd
 import calendar
 import altair as alt
+import tempfile
+import zipfile
+import os
+import xml.etree.ElementTree as ET
+import fiona
+from shapely.geometry import shape, mapping
+
 
 st.set_page_config(
     page_title="Wildfire Burn Severity Analysis",
@@ -326,7 +334,138 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
-# Upload function
+# File Parser: GeoPackage (`.gpkg`)
+def parse_geopackage(upload_file):
+
+    # prepare geometry
+    geometry_list = []
+    
+    with fiona.open(upload_file) as fu:
+        for feat in fu:
+            # Convert geometry to a Shapely geometry object
+            geom = shape(feat["geometry"])
+
+            # handle basic polygon
+            if geom.geom_type == "Polygon":
+                geometry_list.append(ee.Geometry.Polygon(list(geom.exterior.coords)))
+            
+            # handle multipolygon
+            elif geom.geom_type == "MultiPolygon":
+                coords = [list(poly.exterior.coords) for poly in geom.geoms]
+                geometry_list.append(ee.Geometry.MultiPolygon(coords))
+    
+    return geometry_list
+
+
+# File Parser: CSV
+# column name variations found in CSV datasets 
+COLUMN_SYNONYMS = {
+    "x": ["x", "ln", "lon", "lng", "longitude"],
+    "y": ["y", "lt", "lat", "latitude"]
+}
+
+# finding coordinates colomns
+def find_column(df, possible_col_name):
+    for c in possible_col_name:
+        if c in df.columns:
+            return c
+    return None
+
+# main csv parse function
+def parse_csv(upload_file):
+    df = pd.read_csv(upload_file)
+    df.columns = df.columns.str.lower().str.strip()
+
+    # prepare geometry
+    geometry_list = []
+
+    # single-row polygon coordinates
+    if "coordinates" in df.columns:
+        for _, row in df.iterrows():
+            coords = json.loads(row["coordinates"])
+            geometry_list.append(ee.Geometry.Polygon(coords))
+        return geometry_list
+
+    # multirow polygon coordinates
+    x_col = find_column(df, COLUMN_SYNONYMS["x"])
+    y_col = find_column(df, COLUMN_SYNONYMS["y"])
+
+    for _, group in df.groupby("id"):
+        coords = group.sort_values("vertex_index")[[x_col, y_col]].values.tolist()
+        # always check if  the polygon coords close the shape and fix it
+        if coords[0] != coords[-1]:
+            coords.append(coords[0])
+        geometry_list.append(ee.Geometry.Polygon(coords))
+
+    return geometry_list
+
+
+# File Parser: KML (.kml)
+def parse_kml(upload_file):
+    upload_file.seek(0)
+    tree = ET.parse(upload_file)
+    # get the kml tree structure
+    root = tree.getroot()
+    # namespace
+    ns = {"kml": "http://www.opengis.net/kml/2.2"}
+
+    polygons = []
+    # getting coordinates from placemark in the kml
+    for placemark in root.findall(".//kml:Placemark", ns):
+        coords_text = placemark.find(".//kml:coordinates", ns)
+        if coords_text is not None:
+            coords_raw = coords_text.text.strip().split()
+            coords = []
+            for c in coords_raw:
+                lon, lat, *_ = map(float, c.split(","))
+                coords.append([lon, lat])
+
+            # ensuring closed polygon using same xy at start and end
+            if coords[0] != coords[-1]:
+                coords.append(coords[0])
+            polygons.append(ee.Geometry.Polygon([coords]))
+
+    return polygons
+
+# File Parser: Zipped Shapefile (.shp)
+def parse_zip_shapefile(upload_file):
+    # creating a temporary directoruy
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = os.path.join(tmpdir, "uploaded.zip")
+
+        # write uploaded file to disk
+        with open(zip_path, "wb") as f:
+            f.write(upload_file.read())
+
+        # extract zipfile content
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            zf.extractall(tmpdir)
+
+        # parse for .shp file within extracted content
+        shp_files = [os.path.join(tmpdir, f) for f in os.listdir(tmpdir) if f.endswith(".shp")]
+        if not shp_files:
+            return None
+
+        #laod shapefile with geopandas
+        gdf = gpd.read_file(shp_files[0])
+
+        # convert geometry to match earth engine geometry object (as multipolygon)
+        geometry_list = []
+        for geom in gdf.geometry:
+            if geom.geom_type == "Polygon":
+                coords = [list(geom.exterior.coords)]
+                ee_geom = ee.Geometry.Polygon(coords)
+            elif geom.geom_type == "MultiPolygon":
+                coords = [list(p.exterior.coords) for p in geom.geoms]
+                ee_geom = ee.Geometry.MultiPolygon(coords)
+            else:
+                continue
+            geometry_list.append(ee_geom)
+
+        return geometry_list
+        
+
+# Main Upload Function
 last_uploaded_centroid = None
 def upload_files_proc(upload_files):
     # A global variable to track the latest geojson uploaded
@@ -335,6 +474,53 @@ def upload_files_proc(upload_files):
     geometry_aoi_list = []
 
     for upload_file in upload_files:
+        # Get the file name for extension detection
+        file_name = getattr(upload_file, 'name').lower()
+        # reset file pointer if it was read before
+        upload_file.seek(0)
+
+        # GeoPackage file parser
+        if file_name.endswith(".gpkg"):
+            # store gpkg into a temporary file for Fiona
+            with tempfile.NamedTemporaryFile(suffix=".gpkg", delete=False) as tmp:
+                # write uploaded file content to temp file
+                tmp.write(upload_file.getbuffer())
+                # write data to disk for readability
+                tmp.flush()
+                # parse temporary geopackage
+                gpkg_geoms = parse_geopackage(tmp.name)
+            
+            geometry_aoi_list.extend(gpkg_geoms)
+
+            if gpkg_geoms:
+                last_uploaded_centroid = gpkg_geoms[0].centroid(maxError=1).getInfo()["coordinates"]
+            
+            continue
+
+        # CSV file parser
+        if file_name.endswith(".csv"):
+            csv_geoms = parse_csv(upload_file)
+            geometry_aoi_list.extend(csv_geoms)
+            last_uploaded_centroid = csv_geoms[-1].centroid(maxError=1).getInfo()["coordinates"]
+            continue
+
+        # ZIP shapefile parser
+        if file_name.endswith(".zip"):
+            shp_geoms = parse_zip_shapefile(upload_file)
+            if shp_geoms:
+                geometry_aoi_list.extend(shp_geoms)
+                last_uploaded_centroid = shp_geoms[0].centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+        # KML file parser
+        if file_name.endswith(".kml"):
+            kml_geoms = parse_kml(upload_file)
+            if kml_geoms:
+                geometry_aoi_list.extend(kml_geoms)
+                last_uploaded_centroid = kml_geoms[0].centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+        # File Parser: GeoJSON files
         bytes_data = upload_file.read()
         geojson_data = json.loads(bytes_data)
 
@@ -481,13 +667,26 @@ def main():
                 col2.success("Post-Fire NBR Date 📅")
                 updated_date = col2.date_input("updated", datetime(2023, 7, 27), label_visibility="collapsed")
 
-                time_range = 7
+                min_date = date(2015, 6, 27) # sentinel-2 data initial date - 27th June, 2015
+                today = date.today()
 
-                # Process initial date
-                str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
+                # Error handler for date inputs
+                if initial_date < min_date or updated_date < min_date:
+                    st.error("Oops, sentinel-2 data starts from June 27, 2015. Please pick a later date.")
+                elif initial_date > updated_date:
+                    st.error("Your pre-fire date is later than your post-fire date. Please swap them around or choose a different date.")
+                elif initial_date == updated_date:
+                    st.error("Pre-Fire date Post-Fire date can't be the same. Try choosing two different dates.")
+                elif initial_date > today or updated_date > today:
+                    st.error("We can’t fetch future data. Please select a date on or before today.")
+                else:
+                    time_range = 7
 
-                # Process updated date
-                str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
+                    # Process initial date
+                    str_initial_start_date, str_initial_end_date = date_input_proc(initial_date, time_range)
+
+                    # Process updated date
+                    str_updated_start_date, str_updated_end_date = date_input_proc(updated_date, time_range)
         
         #### User input section - END
 
