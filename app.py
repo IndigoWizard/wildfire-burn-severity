@@ -24,6 +24,7 @@ import os
 import xml.etree.ElementTree as ET
 import fiona
 from shapely.geometry import shape, mapping
+import topojson as tp
 
 
 st.set_page_config(
@@ -501,6 +502,39 @@ def parse_geojson(upload_file):
     return geometry_list
 
 
+# File Parser: TopoJSON (.topojson, .json)
+def parse_topojson(upload_file):
+    
+    bytes_data = upload_file.read()
+    topojson_data = json.loads(bytes_data)
+    
+    # Check if this is actually a TopoJSON file
+    if 'type' in topojson_data and topojson_data['type'] == 'Topology':
+        # Convert TopoJSON to GeoDataFrame using topojson library
+        topology = tp.Topology(topojson_data)
+        gdf = topology.to_gdf()
+        
+        # Convert geometry to match earth engine geometry object (as multipolygon)
+        geometry_list = []
+        
+        for geom in gdf.geometry:
+            if geom.geom_type == "Polygon":
+                coords = [list(geom.exterior.coords)]
+                ee_geom = ee.Geometry.Polygon(coords)
+            elif geom.geom_type == "MultiPolygon":
+                coords = [[list(p.exterior.coords) for p in geom.geoms]]
+                ee_geom = ee.Geometry.MultiPolygon(coords)
+            else:
+                continue
+            
+            geometry_list.append(ee_geom)
+        
+        return geometry_list
+    else:
+        # Not a valid TopoJSON file
+        return []
+
+
 # Main Upload Function
 last_uploaded_centroid = None
 def upload_files_proc(upload_files):
@@ -557,12 +591,21 @@ def upload_files_proc(upload_files):
             continue
 
         # File Parser: GeoJSON files
-        if file_name.endswith(".geojson") or file_name.endswith(".json"):
+        if file_name.endswith(".geojson":
             geojson_geoms = parse_geojson(upload_file)
             geometry_aoi_list.extend(geojson_geoms)
             
             if geojson_geoms:
                 last_uploaded_centroid = geojson_geoms[0].centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+            # File Parser: TopoJSON files
+        if file_name.endswith(".topojson") or file_name.endswith(".json"):
+            topojson_geoms = parse_topojson(upload_file)
+            geometry_aoi_list.extend(topojson_geoms)
+            
+            if topojson_geoms:
+                last_uploaded_centroid = topojson_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
 
     # assembling aoi geometries
