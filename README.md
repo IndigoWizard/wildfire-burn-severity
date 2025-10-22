@@ -15,7 +15,7 @@
 
 This web app leverages **Google Earth Engine Python API** to assess and visualize wildfire burn severity on the map.
 
-It computes the **Normalized Burn Ratio (NBR)** and related spectral and environmental indices to evaluate wildfire impact while also integrating **precipitation** and **temperature** datasets ti orivude climate context.
+It computes the **Normalized Burn Ratio (NBR)** and related spectral and environmental indices to evaluate wildfire impact while also integrating **precipitation** and **temperature** datasets to provide climate context.
 
 The app is built with **Streamlit** and requires no setup; simply open it in your browser and start analyzing on the fly! 🔗 **App link**: [https://wildfire-analysis.streamlit.app](https://wildfire-analysis.streamlit.app)
 
