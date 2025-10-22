@@ -591,7 +591,7 @@ def upload_files_proc(upload_files):
             continue
 
         # File Parser: GeoJSON files
-        if file_name.endswith(".geojson":
+        if file_name.endswith(".geojson"):
             geojson_geoms = parse_geojson(upload_file)
             geometry_aoi_list.extend(geojson_geoms)
             
