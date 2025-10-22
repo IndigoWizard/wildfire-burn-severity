@@ -37,7 +37,7 @@ The app is built with **Streamlit** and requires no setup; simply open it in you
 
 - **Visualization & Comprehensive Reporting**
   - Interactive maps with toggleable layers (pre/post TCI, dNBR, NDWI, classified severity).  
-  - Colorblind-friendly visualization palettes for better accessibility(Deuteranomaly, Protanomaly, Tritanomaly, Achromatopsia) synced accross map and report.  
+  - Colorblind-friendly visualization palettes for better accessibility(Deuteranomaly, Protanomaly, Tritanomaly, Achromatopsia) synced across map and report.  
   - Basic info (date, centroid coordinates, surface area)
   - Statistical area calculations for each burn severity class.
   - Interactive `nivo` pie charts for data visualization.
