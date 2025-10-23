@@ -15,7 +15,7 @@
 
 This web app leverages **Google Earth Engine Python API** to assess and visualize wildfire burn severity on the map.
 
-It computes the **Normalized Burn Ratio (NBR)** and related spectral and environmental indices to evaluate wildfire impact while also integrating **precipitation** and **temperature** datasets ti orivude climate context.
+It computes the **Normalized Burn Ratio (NBR)** and related spectral and environmental indices to evaluate wildfire impact while also integrating **precipitation** and **temperature** datasets to provide climate context.
 
 The app is built with **Streamlit** and requires no setup; simply open it in your browser and start analyzing on the fly! 🔗 **App link**: [https://wildfire-analysis.streamlit.app](https://wildfire-analysis.streamlit.app)
 
@@ -37,7 +37,7 @@ The app is built with **Streamlit** and requires no setup; simply open it in you
 
 - **Visualization & Comprehensive Reporting**
   - Interactive maps with toggleable layers (pre/post TCI, dNBR, NDWI, classified severity).  
-  - Colorblind-friendly visualization palettes for better accessibility(Deuteranomaly, Protanomaly, Tritanomaly, Achromatopsia) synced accross map and report.  
+  - Colorblind-friendly visualization palettes for better accessibility(Deuteranomaly, Protanomaly, Tritanomaly, Achromatopsia) synced across map and report.  
   - Basic info (date, centroid coordinates, surface area)
   - Statistical area calculations for each burn severity class.
   - Interactive `nivo` pie charts for data visualization.
