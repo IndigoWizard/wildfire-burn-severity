@@ -1025,406 +1025,409 @@ def main():
 
     #### Analysis Report - START
     st.write("#### Analysis Report")
-    with st.form("report_form"):
-    
-        #### Area Calculation - START
 
-        # geojson area: (geometry area)
-        geometry_area = geojson_area(geometry_aoi)
-
-        # Calculate and display the areas of each dNBR class
-        dNBR_class_areas = []
-        for i in range(1, 8):
-            area = calculate_class_area(masked_dNBR_classified, geometry_aoi, i)
-            dNBR_class_areas.append(area / 1e6)  # Convert to square kilometers
+    @st.fragment
+    def generate_report():
+        with st.form("report_form"):
         
-        class_names = [ # dNBR class names
-            "Enhanced Regrowth (High)",
-            "Enhanced Regrowth (Low)",
-            "Unburned",
-            "Low Severity Burns",
-            "Moderate-Low Severity Burns",
-            "Moderate-High Severity Burns",
-            "High Severity Burns",
-        ]
+            #### Area Calculation - START
 
-        # Report submit button
-        report_form = st.form_submit_button("Generate report", type="primary")
+            # geojson area: (geometry area)
+            geometry_area = geojson_area(geometry_aoi)
 
-        if report_form:
-            st.write("#### Wildfire Burn Severity Analysis Report:")
-            # Stats layout
-            col1, col2 = st.columns([1,1])
-            col3, col4 = st.columns([1.5,2])
-
-            # setting up stats to print
-            centroid_info = f"**ROI Location:** [:blue[{round(latitude, 4)}], :blue[{round(longitude, 4)}]]"
-            area_of_interest = f"**Surface Area of Region of Interest: ~:blue[{geometry_area}] (Km²)**"
-            initial_date_range = f"**Pre-Fire date range:** :blue-background[{str_initial_start_date}], :blue-background[{str_initial_end_date}]"
-            updated_date_range = f"**Post-Fire date range:** :blue-background[{str_updated_start_date}], :blue-background[{str_updated_end_date}]"
-            col1.success(centroid_info) # location
-            col1.success(area_of_interest) # size of aoi
-            col2.success(initial_date_range) # pre-fire date range
-            col2.success(updated_date_range) # post-fire date range
-
-            # print area of individual dNBR classes
-            for i, area in enumerate(dNBR_class_areas, start=1):
-                class_sq = f"**{class_names[i-1]}: ~** :green[{round(area, 4)}] **(Km²)**"
-                col3.info(class_sq)
-
-            # Display Interactive Pie Chart
-            with col4:
-                # Display stat visuals
-                DATA_PIE = [
-                    { "id": class_names[i-1], "label": class_names[i-1], "value": round(area, 4), "color": dNBR_classified_palette[i-1] }
-                    for i, area in enumerate(dNBR_class_areas, start=1)
-                ]
-
-                # Render the nivo.Pie component with the defined theme
-                with elements("nivo_pie_chart"):
-                    with mui.Box(sx={"height": 500}):
-                        nivo.Pie(
-                            data=DATA_PIE,
-                            margin={"top": 20, "right": 100, "bottom": 150, "left": 100},
-                            innerRadius=0.5,
-                            padAngle=0.7,
-                            cornerRadius=3,
-                            activeOuterRadiusOffset=8,
-                            borderWidth=1,
-                            borderColor={"from": "color", "modifiers": [["darker", 0.8]]},
-                            arcLinkLabelsSkipAngle=2,
-                            arcLinkLabelsTextColor={"from": "color"},
-                            arcLinkLabelsColor={"from": "color"},
-                            colors={"datum": 'data.color'},
-                            arcLinkLabel="value",
-                            arcLinkLabelsThickness=2,
-                            arcLabelsSkipAngle=10,
-                            arcLinkLabelsDiagonalLength=10,
-                            arcLinkLabelsStraightLength=10,
-                            arcLinkLabelsTextOffset=4,
-                            arcLabelsTextColor={"from": "color", "modifiers": [["darker", 4]]},
-                            defs = [
-                                {
-                                    "id": "EnhancedRegrowthHigh",
-                                    "type": "patternLines",
-                                    # "color": "#1c742cbf",
-                                    "color": f"{dNBR_classified_palette[0]}",
-                                    "background": f"{dNBR_classified_palette[0]}bf",
-                                    "rotation": 105,
-                                    "lineWidth": 3,
-                                    "spacing": 10,
-                                },
-                                {
-                                    "id": "EnhancedRegrowthLow",
-                                    "type": "patternLines",
-                                    # "color": "#2aae29bf",
-                                    "color": f"{dNBR_classified_palette[1]}",
-                                    "background": f"{dNBR_classified_palette[1]}bf",
-                                    "rotation": -15,
-                                    "lineWidth": 4,
-                                    "spacing": 9,
-                                },
-                                {
-                                    "id": "Unburned",
-                                    "type": "patternSquares",
-                                    # "color": "#a1d574bf",
-                                    "color": f"{dNBR_classified_palette[2]}",
-                                    "background": f"{dNBR_classified_palette[2]}bf",
-                                    "size": 4,
-                                    "padding": 1.5,
-                                    "stagger": True,
-                                },
-                                {
-                                    "id": "LowSeverityBurns",
-                                    "type": "patternSquares",
-                                    # "color": "#f8ebb0bf",
-                                    "color": f"{dNBR_classified_palette[3]}",
-                                    "background": f"{dNBR_classified_palette[3]}bf",
-                                    "size": 5,
-                                    "padding": 3,
-                                    "stagger": True,
-                                },
-                                {
-                                    "id": "ModerateLowSeverityBurns",
-                                    "type": "patternDots",
-                                    # "color": "#f7a769bf",
-                                    "color": f"{dNBR_classified_palette[4]}",
-                                    "background": f"{dNBR_classified_palette[4]}bf",
-                                    "size": 4.5,
-                                    "padding": 4.5,
-                                    "stagger": True,
-                                },
-                                {
-                                    "id": "ModerateHighSeverityBurns",
-                                    "type": "patternDots",
-                                    # "color": "#e86c4ebf",
-                                    "color": f"{dNBR_classified_palette[5]}",
-                                    "background": f"{dNBR_classified_palette[5]}bf",
-                                    "size": 4,
-                                    "padding": 3,
-                                    "stagger": True,
-                                },
-                                {
-                                    "id": "HighSeverityBurns",
-                                    "type": "patternDots",
-                                    # "color": "#902cd6bf",
-                                    "color": f"{dNBR_classified_palette[6]}",
-                                    "background": f"{dNBR_classified_palette[6]}bf",
-                                    "size": 3,
-                                    "padding": 2,
-                                    "stagger": True,
-                                },
-                            ],
-                            fill=[
-                                {"match": {"id": "Enhanced Regrowth (High)"}, "id": "EnhancedRegrowthHigh"},
-                                {"match": {"id": "Enhanced Regrowth (Low)"}, "id": "EnhancedRegrowthLow"},
-                                {"match": {"id": "Unburned"}, "id": "Unburned"},
-                                {"match": {"id": "Low Severity Burns"}, "id": "LowSeverityBurns"},
-                                {"match": {"id": "Moderate-Low Severity Burns"}, "id": "ModerateLowSeverityBurns"},
-                                {"match": {"id": "Moderate-High Severity Burns"}, "id": "ModerateHighSeverityBurns"},
-                                {"match": {"id": "High Severity Burns"}, "id": "HighSeverityBurns"},
-                            ],
-                            theme={
-                                "tooltip": {
-                                    "container": { # container within the tooltip
-                                        "background": "white",  # background of the tooltip inside container
-                                        "fontSize": 14,
-                                        "font-family": "sans-serif",
-                                        "padding": 2,
-                                        "border-radius": 4
-                                    },
-                                    "basic": { # the box within the container within the tooltip
-                                        "whiteSpace": "pre",
-                                        "display": "flex",
-                                        "flex-direction": "row",
-                                        "alignItems": "center",
-                                        "justify-content": "space-around",
-                                        "background": "#0e1117",
-                                        "margin": 1,
-                                        "padding": 5,
-                                        "width": "fit-content",
-                                        "height": "fit-content",
-                                        "color": "white",
-                                    },
-                                }
-                            }
-                        )
-        #### Area Calculation - END
-
-        #### Precipitation Claculation - START
-           
-            with st.container():
-
-                # Define CHIRPS image collection function
-                def chirpsCollection(initialDate, updatedDate, aoi):
-                    chirps = (
-                        ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
-                        .filterDate(initialDate, updatedDate)
-                        .filterBounds(aoi)
-                        .select("precipitation")
-                    )
-                    return chirps
-
-                # Generate precipitation data for full months
-                def full_month_precipitation(initialDate, endDate, aoi):
-                    # Convert input dates to datetime objects
-                    initial_date = datetime.strptime(initialDate, "%Y-%m-%d")
-                    end_date = datetime.strptime(endDate, "%Y-%m-%d")
-
-                    # Determine start and end of the full months
-                    start_of_month = initial_date.replace(day=1)
-                    _, end_of_month_day = calendar.monthrange(end_date.year, end_date.month)
-                    end_of_month = end_date.replace(day=end_of_month_day)
-
-                    # Ensure non-duplicate timeline
-                    if initial_date.month == end_date.month and initial_date.year == end_date.year:
-                        # If same month/year, use full month only once
-                        start_of_month = initial_date.replace(day=1)
-                        end_of_month = end_date.replace(day=end_of_month_day)
-
-                    # Generate precipitation data
-                    raincol = chirpsCollection(start_of_month.strftime("%Y-%m-%d"), end_of_month.strftime("%Y-%m-%d"), aoi)
-                    
-                    daily_precipitation = raincol.map(
-                        lambda img: ee.Feature(
-                            aoi,
-                            {
-                                "date": img.date().format("YYYY-MM-dd"),
-                                "precipitation": img.reduceRegion(
-                                    reducer=ee.Reducer.mean(),
-                                    geometry=aoi,
-                                    scale=30
-                                ).get("precipitation"),
-                            }
-                        )
-                    )
-
-                    # Convert to Python list
-                    daily_list = daily_precipitation.getInfo()["features"]
-                    
-                    # Extracting dates & precipitation values
-                    dates = [entry["properties"]["date"] for entry in daily_list]
-                    values = [entry["properties"]["precipitation"] for entry in daily_list]
-
-                    # Create a DataFrame
-                    rdf = pd.DataFrame({"Date": dates, "Precipitation": [round(value, 2) if value is not None else None for value in values]})
-                    return rdf
-
-                # Data frame / viz layout
-                col5, col6 = st.columns([1,2])
-                
-                # Fetch precipitation data
-                rdf = full_month_precipitation(str_initial_start_date, str_updated_end_date, geometry_aoi)
-
-                # Display the DataFrame in Streamlit
-                col5.subheader("Data table:")
-                col5.dataframe(
-                    rdf,
-                    column_config={
-                        "Date": "Date",
-                        "Precipitation": st.column_config.ProgressColumn(
-                            "Rainfall (mm)", format=" %f mm", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
-                        ),
-                    },
-                    hide_index=True, width=400, height=420
-                )
-
-                # Chart visualization
-                def precipitation_chart(rdf):
-                    # Converting Date column to compatible Altair datetime
-                    rdf["Date"] = pd.to_datetime(rdf["Date"])
-
-                    # Altair graph: bar chart with a line chart
-                    viz_chart = alt.Chart(rdf).mark_bar(color="#88c0d0").encode(
-                        x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
-                        y=alt.Y("Precipitation:Q", axis=alt.Axis(title=None, ticks=True, tickMinStep=1)),
-                        tooltip=["Date:T", "Precipitation:Q"]
-                    ) + alt.Chart(rdf).mark_line(color="#004dc6", point=True, interpolate="monotone").encode(
-                        x="Date:T",
-                        y="Precipitation:Q"
-                    ).properties(
-                        title="Precipitation (mm)",
-                        height=500
-                    )
-                    return viz_chart
-
-                # Generate and display Altair chart
-                viz_chart = precipitation_chart(rdf)
-                col6.subheader("Daily Precipitation")
-                col6.altair_chart(viz_chart, use_container_width=True)
-
-        #### Precipitation Claculation - END
-
-
-        #### Temperature calculation - START
-
-                # Define the Temperature Image Collection function
-                def temperatureCollection(initialDate, updatedDate, aoi):
-                    temp_collection = (
-                        ee.ImageCollection("ECMWF/ERA5_LAND/HOURLY")  # GCOM-C/SGLI dataset
-                        .filterDate(initialDate, updatedDate)
-                        .filterBounds(aoi)
-                        .select("temperature_2m")  # Correct band: Average Land Surface Temperature
-                    )
-                    return temp_collection
-
-                # Generate temperature data for full months
-                def full_month_temperature(initialDate, endDate, aoi):
-                    # Convert input dates to datetime objects
-                    initial_date = datetime.strptime(initialDate, "%Y-%m-%d")
-                    end_date = datetime.strptime(endDate, "%Y-%m-%d")
-
-                    # Determine start and end of the full months
-                    start_of_month = initial_date.replace(day=1)
-                    _, end_of_month_day = calendar.monthrange(end_date.year, end_date.month)
-                    end_of_month = end_date.replace(day=end_of_month_day)
-
-                    # Avoiding duplicate timespan
-                    if initial_date.month == end_date.month and initial_date.year == end_date.year:
-                        start_of_month = initial_date.replace(day=1)
-                        end_of_month = end_date.replace(day=end_of_month_day)
-
-                    # Generate temperature data
-                    tempcol = temperatureCollection(start_of_month.strftime("%Y-%m-%d"), end_of_month.strftime("%Y-%m-%d"), aoi)
-
-                    daily_temperature = tempcol.map(
-                        lambda img: ee.Feature(
-                            aoi,
-                            {
-                                "date": img.date().format("YYYY-MM-dd"),
-                                "temperature": img.reduceRegion(
-                                    reducer=ee.Reducer.mean(),
-                                    geometry=aoi,
-                                    scale=11132
-                                ).get("temperature_2m"),
-                            }
-                        )
-                    )
-
-                    # Convert to Python list
-                    daily_temp_list = daily_temperature.getInfo()["features"]
-
-                    # Extracting dates & temperature values (scaled to °C if necessary)
-                    dates_t = [entry["properties"]["date"] for entry in daily_temp_list]
-                    values_t = [entry["properties"]["temperature"] for entry in daily_temp_list]
-                    scaled_values = [round(value - 273.15, 2) if value is not None else None for value in values_t]  # Scale values from dataset
-
-                    # Create a DataFrame
-                    temp_df = pd.DataFrame({"Date": dates_t, "Temperature": scaled_values})
-
-                    # Remove duplicates by averaging values for each date
-                    temp_df = temp_df.groupby("Date", as_index=False).mean()
-                    return temp_df
-
-
-                # Data frame / visualization layout
-                col5, col6 = st.columns([1, 2])
-
-                # Fetch temperature data
-                temp_df = full_month_temperature(str_initial_start_date, str_updated_end_date, geometry_aoi)
-
-                # Display the DataFrame in Streamlit
-                col5.subheader("Temperature Data Table:")
-                col5.dataframe(
-                    temp_df,
-                    column_config={
-                        "Date": "Date",
-                        "Temperature": st.column_config.NumberColumn(
-                            "Temperature (°C)", format="%.2f °C", min_value=-50, max_value=50, width="medium", help="Temperature in Celsius"
-                        ),
-                    },
-                    hide_index=True, width=400, height=420
-                )
-
-                # Chart visualization
-                def temperature_chart(temp_df):
-                    # Converting Date column to compatible Altair datetime
-                    temp_df["Date"] = pd.to_datetime(temp_df["Date"])
-
-                    # Altair graph: bar chart with a line chart
-                    viz_chart = alt.Chart(temp_df).mark_bar(color="#e65780").encode(
-                        x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
-                        y=alt.Y("Temperature:Q", axis=alt.Axis(title=None, ticks=True, tickMinStep=1)),
-                        tooltip=["Date:T", "Temperature:Q"]
-                    ) + alt.Chart(temp_df).mark_line(color="#e63946", point=True, interpolate="monotone").encode(
-                        x="Date:T",
-                        y="Temperature:Q"
-                    ).properties(
-                        title="Daily Temperature (°C)",
-                        height=500
-                    )
-                    return viz_chart
-
-                # Generate and display Altair chart
-                temp_viz_chart = temperature_chart(temp_df)
-                col6.subheader("Daily Temperature")
-                col6.altair_chart(temp_viz_chart, use_container_width=True)
+            # Calculate and display the areas of each dNBR class
+            dNBR_class_areas = []
+            for i in range(1, 8):
+                area = calculate_class_area(masked_dNBR_classified, geometry_aoi, i)
+                dNBR_class_areas.append(area / 1e6)  # Convert to square kilometers
             
-        #### Temperature calculation - END
-    
-    #### Analysis Report - END
+            class_names = [ # dNBR class names
+                "Enhanced Regrowth (High)",
+                "Enhanced Regrowth (Low)",
+                "Unburned",
+                "Low Severity Burns",
+                "Moderate-Low Severity Burns",
+                "Moderate-High Severity Burns",
+                "High Severity Burns",
+            ]
+
+            # Report submit button
+            report_form = st.form_submit_button("Generate report", type="primary")
+
+            if report_form:
+                st.write("#### Wildfire Burn Severity Analysis Report:")
+                # Stats layout
+                col1, col2 = st.columns([1,1])
+                col3, col4 = st.columns([1.5,2])
+
+                # setting up stats to print
+                centroid_info = f"**ROI Location:** [:blue[{round(latitude, 4)}], :blue[{round(longitude, 4)}]]"
+                area_of_interest = f"**Surface Area of Region of Interest: ~:blue[{geometry_area}] (Km²)**"
+                initial_date_range = f"**Pre-Fire date range:** :blue-background[{str_initial_start_date}], :blue-background[{str_initial_end_date}]"
+                updated_date_range = f"**Post-Fire date range:** :blue-background[{str_updated_start_date}], :blue-background[{str_updated_end_date}]"
+                col1.success(centroid_info) # location
+                col1.success(area_of_interest) # size of aoi
+                col2.success(initial_date_range) # pre-fire date range
+                col2.success(updated_date_range) # post-fire date range
+
+                # print area of individual dNBR classes
+                for i, area in enumerate(dNBR_class_areas, start=1):
+                    class_sq = f"**{class_names[i-1]}: ~** :green[{round(area, 4)}] **(Km²)**"
+                    col3.info(class_sq)
+
+                # Display Interactive Pie Chart
+                with col4:
+                    # Display stat visuals
+                    DATA_PIE = [
+                        { "id": class_names[i-1], "label": class_names[i-1], "value": round(area, 4), "color": dNBR_classified_palette[i-1] }
+                        for i, area in enumerate(dNBR_class_areas, start=1)
+                    ]
+
+                    # Render the nivo.Pie component with the defined theme
+                    with elements("nivo_pie_chart"):
+                        with mui.Box(sx={"height": 500}):
+                            nivo.Pie(
+                                data=DATA_PIE,
+                                margin={"top": 20, "right": 100, "bottom": 150, "left": 100},
+                                innerRadius=0.5,
+                                padAngle=0.7,
+                                cornerRadius=3,
+                                activeOuterRadiusOffset=8,
+                                borderWidth=1,
+                                borderColor={"from": "color", "modifiers": [["darker", 0.8]]},
+                                arcLinkLabelsSkipAngle=2,
+                                arcLinkLabelsTextColor={"from": "color"},
+                                arcLinkLabelsColor={"from": "color"},
+                                colors={"datum": 'data.color'},
+                                arcLinkLabel="value",
+                                arcLinkLabelsThickness=2,
+                                arcLabelsSkipAngle=10,
+                                arcLinkLabelsDiagonalLength=10,
+                                arcLinkLabelsStraightLength=10,
+                                arcLinkLabelsTextOffset=4,
+                                arcLabelsTextColor={"from": "color", "modifiers": [["darker", 4]]},
+                                defs = [
+                                    {
+                                        "id": "EnhancedRegrowthHigh",
+                                        "type": "patternLines",
+                                        # "color": "#1c742cbf",
+                                        "color": f"{dNBR_classified_palette[0]}",
+                                        "background": f"{dNBR_classified_palette[0]}bf",
+                                        "rotation": 105,
+                                        "lineWidth": 3,
+                                        "spacing": 10,
+                                    },
+                                    {
+                                        "id": "EnhancedRegrowthLow",
+                                        "type": "patternLines",
+                                        # "color": "#2aae29bf",
+                                        "color": f"{dNBR_classified_palette[1]}",
+                                        "background": f"{dNBR_classified_palette[1]}bf",
+                                        "rotation": -15,
+                                        "lineWidth": 4,
+                                        "spacing": 9,
+                                    },
+                                    {
+                                        "id": "Unburned",
+                                        "type": "patternSquares",
+                                        # "color": "#a1d574bf",
+                                        "color": f"{dNBR_classified_palette[2]}",
+                                        "background": f"{dNBR_classified_palette[2]}bf",
+                                        "size": 4,
+                                        "padding": 1.5,
+                                        "stagger": True,
+                                    },
+                                    {
+                                        "id": "LowSeverityBurns",
+                                        "type": "patternSquares",
+                                        # "color": "#f8ebb0bf",
+                                        "color": f"{dNBR_classified_palette[3]}",
+                                        "background": f"{dNBR_classified_palette[3]}bf",
+                                        "size": 5,
+                                        "padding": 3,
+                                        "stagger": True,
+                                    },
+                                    {
+                                        "id": "ModerateLowSeverityBurns",
+                                        "type": "patternDots",
+                                        # "color": "#f7a769bf",
+                                        "color": f"{dNBR_classified_palette[4]}",
+                                        "background": f"{dNBR_classified_palette[4]}bf",
+                                        "size": 4.5,
+                                        "padding": 4.5,
+                                        "stagger": True,
+                                    },
+                                    {
+                                        "id": "ModerateHighSeverityBurns",
+                                        "type": "patternDots",
+                                        # "color": "#e86c4ebf",
+                                        "color": f"{dNBR_classified_palette[5]}",
+                                        "background": f"{dNBR_classified_palette[5]}bf",
+                                        "size": 4,
+                                        "padding": 3,
+                                        "stagger": True,
+                                    },
+                                    {
+                                        "id": "HighSeverityBurns",
+                                        "type": "patternDots",
+                                        # "color": "#902cd6bf",
+                                        "color": f"{dNBR_classified_palette[6]}",
+                                        "background": f"{dNBR_classified_palette[6]}bf",
+                                        "size": 3,
+                                        "padding": 2,
+                                        "stagger": True,
+                                    },
+                                ],
+                                fill=[
+                                    {"match": {"id": "Enhanced Regrowth (High)"}, "id": "EnhancedRegrowthHigh"},
+                                    {"match": {"id": "Enhanced Regrowth (Low)"}, "id": "EnhancedRegrowthLow"},
+                                    {"match": {"id": "Unburned"}, "id": "Unburned"},
+                                    {"match": {"id": "Low Severity Burns"}, "id": "LowSeverityBurns"},
+                                    {"match": {"id": "Moderate-Low Severity Burns"}, "id": "ModerateLowSeverityBurns"},
+                                    {"match": {"id": "Moderate-High Severity Burns"}, "id": "ModerateHighSeverityBurns"},
+                                    {"match": {"id": "High Severity Burns"}, "id": "HighSeverityBurns"},
+                                ],
+                                theme={
+                                    "tooltip": {
+                                        "container": { # container within the tooltip
+                                            "background": "white",  # background of the tooltip inside container
+                                            "fontSize": 14,
+                                            "font-family": "sans-serif",
+                                            "padding": 2,
+                                            "border-radius": 4
+                                        },
+                                        "basic": { # the box within the container within the tooltip
+                                            "whiteSpace": "pre",
+                                            "display": "flex",
+                                            "flex-direction": "row",
+                                            "alignItems": "center",
+                                            "justify-content": "space-around",
+                                            "background": "#0e1117",
+                                            "margin": 1,
+                                            "padding": 5,
+                                            "width": "fit-content",
+                                            "height": "fit-content",
+                                            "color": "white",
+                                        },
+                                    }
+                                }
+                            )
+            #### Area Calculation - END
+
+            #### Precipitation Claculation - START
+            
+                with st.container():
+
+                    # Define CHIRPS image collection function
+                    def chirpsCollection(initialDate, updatedDate, aoi):
+                        chirps = (
+                            ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
+                            .filterDate(initialDate, updatedDate)
+                            .filterBounds(aoi)
+                            .select("precipitation")
+                        )
+                        return chirps
+
+                    # Generate precipitation data for full months
+                    def full_month_precipitation(initialDate, endDate, aoi):
+                        # Convert input dates to datetime objects
+                        initial_date = datetime.strptime(initialDate, "%Y-%m-%d")
+                        end_date = datetime.strptime(endDate, "%Y-%m-%d")
+
+                        # Determine start and end of the full months
+                        start_of_month = initial_date.replace(day=1)
+                        _, end_of_month_day = calendar.monthrange(end_date.year, end_date.month)
+                        end_of_month = end_date.replace(day=end_of_month_day)
+
+                        # Ensure non-duplicate timeline
+                        if initial_date.month == end_date.month and initial_date.year == end_date.year:
+                            # If same month/year, use full month only once
+                            start_of_month = initial_date.replace(day=1)
+                            end_of_month = end_date.replace(day=end_of_month_day)
+
+                        # Generate precipitation data
+                        raincol = chirpsCollection(start_of_month.strftime("%Y-%m-%d"), end_of_month.strftime("%Y-%m-%d"), aoi)
+                        
+                        daily_precipitation = raincol.map(
+                            lambda img: ee.Feature(
+                                aoi,
+                                {
+                                    "date": img.date().format("YYYY-MM-dd"),
+                                    "precipitation": img.reduceRegion(
+                                        reducer=ee.Reducer.mean(),
+                                        geometry=aoi,
+                                        scale=30
+                                    ).get("precipitation"),
+                                }
+                            )
+                        )
+
+                        # Convert to Python list
+                        daily_list = daily_precipitation.getInfo()["features"]
+                        
+                        # Extracting dates & precipitation values
+                        dates = [entry["properties"]["date"] for entry in daily_list]
+                        values = [entry["properties"]["precipitation"] for entry in daily_list]
+
+                        # Create a DataFrame
+                        rdf = pd.DataFrame({"Date": dates, "Precipitation": [round(value, 2) if value is not None else None for value in values]})
+                        return rdf
+
+                    # Data frame / viz layout
+                    col5, col6 = st.columns([1,2])
+                    
+                    # Fetch precipitation data
+                    rdf = full_month_precipitation(str_initial_start_date, str_updated_end_date, geometry_aoi)
+
+                    # Display the DataFrame in Streamlit
+                    col5.subheader("Data table:")
+                    col5.dataframe(
+                        rdf,
+                        column_config={
+                            "Date": "Date",
+                            "Precipitation": st.column_config.ProgressColumn(
+                                "Rainfall (mm)", format=" %f mm", min_value=0, max_value=100, width="medium", help='Precipitation (mm)'
+                            ),
+                        },
+                        hide_index=True, width=400, height=420
+                    )
+
+                    # Chart visualization
+                    def precipitation_chart(rdf):
+                        # Converting Date column to compatible Altair datetime
+                        rdf["Date"] = pd.to_datetime(rdf["Date"])
+
+                        # Altair graph: bar chart with a line chart
+                        viz_chart = alt.Chart(rdf).mark_bar(color="#88c0d0").encode(
+                            x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
+                            y=alt.Y("Precipitation:Q", axis=alt.Axis(title=None, ticks=True, tickMinStep=1)),
+                            tooltip=["Date:T", "Precipitation:Q"]
+                        ) + alt.Chart(rdf).mark_line(color="#004dc6", point=True, interpolate="monotone").encode(
+                            x="Date:T",
+                            y="Precipitation:Q"
+                        ).properties(
+                            title="Precipitation (mm)",
+                            height=500
+                        )
+                        return viz_chart
+
+                    # Generate and display Altair chart
+                    viz_chart = precipitation_chart(rdf)
+                    col6.subheader("Daily Precipitation")
+                    col6.altair_chart(viz_chart, use_container_width=True)
+
+            #### Precipitation Claculation - END
 
 
+            #### Temperature calculation - START
+
+                    # Define the Temperature Image Collection function
+                    def temperatureCollection(initialDate, updatedDate, aoi):
+                        temp_collection = (
+                            ee.ImageCollection("ECMWF/ERA5_LAND/HOURLY")  # GCOM-C/SGLI dataset
+                            .filterDate(initialDate, updatedDate)
+                            .filterBounds(aoi)
+                            .select("temperature_2m")  # Correct band: Average Land Surface Temperature
+                        )
+                        return temp_collection
+
+                    # Generate temperature data for full months
+                    def full_month_temperature(initialDate, endDate, aoi):
+                        # Convert input dates to datetime objects
+                        initial_date = datetime.strptime(initialDate, "%Y-%m-%d")
+                        end_date = datetime.strptime(endDate, "%Y-%m-%d")
+
+                        # Determine start and end of the full months
+                        start_of_month = initial_date.replace(day=1)
+                        _, end_of_month_day = calendar.monthrange(end_date.year, end_date.month)
+                        end_of_month = end_date.replace(day=end_of_month_day)
+
+                        # Avoiding duplicate timespan
+                        if initial_date.month == end_date.month and initial_date.year == end_date.year:
+                            start_of_month = initial_date.replace(day=1)
+                            end_of_month = end_date.replace(day=end_of_month_day)
+
+                        # Generate temperature data
+                        tempcol = temperatureCollection(start_of_month.strftime("%Y-%m-%d"), end_of_month.strftime("%Y-%m-%d"), aoi)
+
+                        daily_temperature = tempcol.map(
+                            lambda img: ee.Feature(
+                                aoi,
+                                {
+                                    "date": img.date().format("YYYY-MM-dd"),
+                                    "temperature": img.reduceRegion(
+                                        reducer=ee.Reducer.mean(),
+                                        geometry=aoi,
+                                        scale=11132
+                                    ).get("temperature_2m"),
+                                }
+                            )
+                        )
+
+                        # Convert to Python list
+                        daily_temp_list = daily_temperature.getInfo()["features"]
+
+                        # Extracting dates & temperature values (scaled to °C if necessary)
+                        dates_t = [entry["properties"]["date"] for entry in daily_temp_list]
+                        values_t = [entry["properties"]["temperature"] for entry in daily_temp_list]
+                        scaled_values = [round(value - 273.15, 2) if value is not None else None for value in values_t]  # Scale values from dataset
+
+                        # Create a DataFrame
+                        temp_df = pd.DataFrame({"Date": dates_t, "Temperature": scaled_values})
+
+                        # Remove duplicates by averaging values for each date
+                        temp_df = temp_df.groupby("Date", as_index=False).mean()
+                        return temp_df
+
+
+                    # Data frame / visualization layout
+                    col5, col6 = st.columns([1, 2])
+
+                    # Fetch temperature data
+                    temp_df = full_month_temperature(str_initial_start_date, str_updated_end_date, geometry_aoi)
+
+                    # Display the DataFrame in Streamlit
+                    col5.subheader("Temperature Data Table:")
+                    col5.dataframe(
+                        temp_df,
+                        column_config={
+                            "Date": "Date",
+                            "Temperature": st.column_config.NumberColumn(
+                                "Temperature (°C)", format="%.2f °C", min_value=-50, max_value=50, width="medium", help="Temperature in Celsius"
+                            ),
+                        },
+                        hide_index=True, width=400, height=420
+                    )
+
+                    # Chart visualization
+                    def temperature_chart(temp_df):
+                        # Converting Date column to compatible Altair datetime
+                        temp_df["Date"] = pd.to_datetime(temp_df["Date"])
+
+                        # Altair graph: bar chart with a line chart
+                        viz_chart = alt.Chart(temp_df).mark_bar(color="#e65780").encode(
+                            x=alt.X("Date:T", axis=alt.Axis(title="Time (Days)", ticks=True, tickMinStep=1)),
+                            y=alt.Y("Temperature:Q", axis=alt.Axis(title=None, ticks=True, tickMinStep=1)),
+                            tooltip=["Date:T", "Temperature:Q"]
+                        ) + alt.Chart(temp_df).mark_line(color="#e63946", point=True, interpolate="monotone").encode(
+                            x="Date:T",
+                            y="Temperature:Q"
+                        ).properties(
+                            title="Daily Temperature (°C)",
+                            height=500
+                        )
+                        return viz_chart
+
+                    # Generate and display Altair chart
+                    temp_viz_chart = temperature_chart(temp_df)
+                    col6.subheader("Daily Temperature")
+                    col6.altair_chart(temp_viz_chart, use_container_width=True)
+                
+            #### Temperature calculation - END
+        
+        #### Analysis Report - END
+
+    generate_report()
 
     ##### Miscs Infos - START
     with st.container():
