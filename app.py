@@ -644,22 +644,22 @@ def upload_files_proc(upload_files):
                 last_uploaded_centroid = kml_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
 
-        # File Parser: GeoJSON files
-        if file_name.endswith(".geojson"):
-            geojson_geoms = parse_geojson(upload_file)
-            geometry_aoi_list.extend(geojson_geoms)
-            
-            if geojson_geoms:
-                last_uploaded_centroid = geojson_geoms[0].centroid(maxError=1).getInfo()['coordinates']
-            continue
-
-            # File Parser: TopoJSON files
-        if file_name.endswith(".topojson") or file_name.endswith(".json"):
+        # File Parser: TopoJSON files
+        if file_name.endswith(".topojson"):
             topojson_geoms = parse_topojson(upload_file)
             geometry_aoi_list.extend(topojson_geoms)
             
             if topojson_geoms:
                 last_uploaded_centroid = topojson_geoms[0].centroid(maxError=1).getInfo()['coordinates']
+            continue
+
+        # File Parser: GeoJSON files
+        if file_name.endswith(".geojson") or file_name.endswith(".json"):
+            geojson_geoms = parse_geojson(upload_file)
+            geometry_aoi_list.extend(geojson_geoms)
+            
+            if geojson_geoms:
+                last_uploaded_centroid = geojson_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
 
     # assembling aoi geometries
