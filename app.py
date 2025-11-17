@@ -360,8 +360,8 @@ def parse_geopackage(upload_file):
 # File Parser: CSV
 # column name variations found in CSV datasets 
 COLUMN_SYNONYMS = {
-    "x": ["x", "ln", "lon", "lng", "longitude"],
-    "y": ["y", "lt", "lat", "latitude"]
+    "x": ["x", "ln", "lon", "lons", "lng", "lngs", "longitude", "longitudes"],
+    "y": ["y", "lt", "lat", "lats", "latitude", "latitudes"]
 }
 
 # finding coordinates colomns
