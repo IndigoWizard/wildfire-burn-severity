@@ -334,6 +334,11 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
     collection = collection.map(clipCollection)
     return collection
 
+# Error dialog box
+@st.dialog("Error Report:")
+def show_upload_error(messages):
+    st.error(messages)
+
 # File Parser: GeoPackage (`.gpkg`)
 def parse_geopackage(upload_file):
 
@@ -467,38 +472,45 @@ def parse_zip_shapefile(upload_file):
 
 # File Parser: GeoJSON (.geojson, .json)
 def parse_geojson(upload_file):
+    try:
+        bytes_data = upload_file.read()
+        try:
+            geojson_data = json.loads(bytes_data)
+        except json.JSONDecodeError:
+            return [], "Invalid GeoJSON file. JSON could not be decoded."
 
-    bytes_data = upload_file.read()
-    geojson_data = json.loads(bytes_data)
+        # detect the correct container of features
+        if 'features' in geojson_data and isinstance(geojson_data['features'], list):
+            features = geojson_data['features']
+        elif 'geometries' in geojson_data and isinstance(geojson_data['geometries'], list):
+            # Handle GeometryCollection-style structures
+            features = [{'geometry': geo} for geo in geojson_data['geometries']]
+        else:
+            # skip unsupported or invalid GeoJSON
+            return [], "Unsupported GeoJSON structure. Must containe a 'features' or 'geometries' field."
 
-    # detect the correct container of features
-    if 'features' in geojson_data and isinstance(geojson_data['features'], list):
-        features = geojson_data['features']
-    elif 'geometries' in geojson_data and isinstance(geojson_data['geometries'], list):
-        # Handle GeometryCollection-style structures
-        features = [{'geometry': geo} for geo in geojson_data['geometries']]
-    else:
-        # skip unsupported or invalid GeoJSON
-        return []
+        geometry_list = []
 
-    geometry_list = []
+        # build Earth Engine geometries
+        for feature in features:
+            if 'geometry' in feature and 'coordinates' in feature['geometry']:
+                coordinates = feature['geometry']['coordinates']
+                geometry_type = feature['geometry']['type']
 
-    # build Earth Engine geometries
-    for feature in features:
-        if 'geometry' in feature and 'coordinates' in feature['geometry']:
-            coordinates = feature['geometry']['coordinates']
-            geometry_type = feature['geometry']['type']
+                # Create Polygon or MultiPolygon geometry
+                geometry = (
+                    ee.Geometry.Polygon(coordinates)
+                    if geometry_type == 'Polygon'
+                    else ee.Geometry.MultiPolygon(coordinates)
+                )
 
-            # Create Polygon or MultiPolygon geometry
-            geometry = (
-                ee.Geometry.Polygon(coordinates)
-                if geometry_type == 'Polygon'
-                else ee.Geometry.MultiPolygon(coordinates)
-            )
+                geometry_list.append(geometry)
 
-            geometry_list.append(geometry)
-
-    return geometry_list
+        if not geometry_list:
+            return [], "No valide geometries in the GeoJSON file. Ensure it contains Polygon or MultiPolygon features."
+        return geometry_list, None
+    except Exception as e:
+        return [], f"Error processing GeoJSON file: {str(e)} Please verify the file is valid."
 
 
 # File Parser: TopoJSON (.topojson, .json)
@@ -596,7 +608,9 @@ def upload_files_proc(upload_files):
     global last_uploaded_centroid
     # Setting up a variable that takes all polygons/geometries within the same/different geojson
     geometry_aoi_list = []
-
+    # Variable to store all error messages from various parsers
+    error_messages = []
+    
     for upload_file in upload_files:
         # Get the file name for extension detection
         file_name = getattr(upload_file, 'name').lower()
@@ -655,13 +669,19 @@ def upload_files_proc(upload_files):
 
         # File Parser: GeoJSON files
         if file_name.endswith(".geojson") or file_name.endswith(".json"):
-            geojson_geoms = parse_geojson(upload_file)
+            geojson_geoms, error = parse_geojson(upload_file)
+            
+            if error:
+                error_messages.append(f"→ {file_name}: \n > {error}")
+            
             geometry_aoi_list.extend(geojson_geoms)
             
             if geojson_geoms:
                 last_uploaded_centroid = geojson_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
-
+    
+    if error_messages:
+        show_upload_error("\n\n---\n\n".join(error_messages))
     # assembling aoi geometries
     if geometry_aoi_list:
         geometry_aoi = ee.Geometry.MultiPolygon(geometry_aoi_list)
