@@ -432,42 +432,66 @@ def parse_kml(upload_file):
 
     return polygons
 
-# File Parser: Zipped Shapefile (.shp)
+# File Parser: Zipped Shapefile (.zip)
 def parse_zip_shapefile(upload_file):
-    # creating a temporary directoruy
-    with tempfile.TemporaryDirectory() as tmpdir:
-        zip_path = os.path.join(tmpdir, "uploaded.zip")
+    try:
+        # creating a temporary directoruy
+        with tempfile.TemporaryDirectory() as tmpdir:
+            zip_path = os.path.join(tmpdir, "uploaded.zip")
 
-        # write uploaded file to disk
-        with open(zip_path, "wb") as f:
-            f.write(upload_file.read())
+            try:
+                # write uploaded file to disk
+                with open(zip_path, "wb") as f:
+                    f.write(upload_file.read())
+            except Exception:
+                return [], "Couldn't read uploaded Zip file."
 
-        # extract zipfile content
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(tmpdir)
+            try:
+                # extract zipfile content
+                with zipfile.ZipFile(zip_path, "r") as zf:
+                    zf.extractall(tmpdir)
+            except zipfile.BadZipFile:
+                return [], "Not a valid zip file."
 
-        # parse for .shp file within extracted content
-        shp_files = [os.path.join(tmpdir, f) for f in os.listdir(tmpdir) if f.endswith(".shp")]
-        if not shp_files:
-            return None
+            # parse for .shp file within extracted content
+            shp_files = [os.path.join(tmpdir, f) for f in os.listdir(tmpdir) if f.endswith(".shp")]
+            if not shp_files:
+                return [], "Zip file does not contain .SHP file."
 
-        #laod shapefile with geopandas
-        gdf = gpd.read_file(shp_files[0])
+            #laod shapefile with geopandas
+            try:
+                gdf = gpd.read_file(shp_files[0])
+            except Exception as e:
+                return [], f"Failed to read Shapefile with GeoPandas: Missing one or multiple companion files (.SHX, .DBF, .CPG, .PRJ) {str(e)}"
 
-        # convert geometry to match earth engine geometry object (as multipolygon)
-        geometry_list = []
-        for geom in gdf.geometry:
-            if geom.geom_type == "Polygon":
-                coords = [list(geom.exterior.coords)]
-                ee_geom = ee.Geometry.Polygon(coords)
-            elif geom.geom_type == "MultiPolygon":
-                coords = [list(p.exterior.coords) for p in geom.geoms]
-                ee_geom = ee.Geometry.MultiPolygon(coords)
-            else:
-                continue
-            geometry_list.append(ee_geom)
+            if gdf.empty:
+                return [], "Shapefile contains no features."
 
-        return geometry_list
+            # convert geometry to match earth engine geometry object (as multipolygon)
+            geometry_list = []
+
+            for geom in gdf.geometry:
+                try:
+                    if geom.geom_type == "Polygon":
+                        coords = [list(geom.exterior.coords)]
+                        ee_geom = ee.Geometry.Polygon(coords)
+                    elif geom.geom_type == "MultiPolygon":
+                        coords = [list(p.exterior.coords) for p in geom.geoms]
+                        ee_geom = ee.Geometry.MultiPolygon(coords)
+                    else:
+                        continue  # ignore non-area geometries
+                    geometry_list.append(ee_geom)
+
+                except Exception:
+                    continue  # skip invalid EE geometries
+
+            if not geometry_list:
+                return [], "No valid Polygon or MultiPolygon geometries found in Shapefile."
+
+            return geometry_list, None
+
+    except Exception as e:
+        return [], f"Unexpected error while processing Shapefile: {str(e)}"
         
 
 # File Parser: GeoJSON (.geojson, .json)
@@ -644,9 +668,11 @@ def upload_files_proc(upload_files):
 
         # ZIP shapefile parser
         if file_name.endswith(".zip"):
-            shp_geoms = parse_zip_shapefile(upload_file)
+            shp_geoms, error = parse_zip_shapefile(upload_file)
+            if error:
+                error_messages.append(f"→ {file_name}:\n > {error}")
+            geometry_aoi_list.extend(shp_geoms)
             if shp_geoms:
-                geometry_aoi_list.extend(shp_geoms)
                 last_uploaded_centroid = shp_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
 
