@@ -378,32 +378,63 @@ def find_column(df, possible_col_name):
 
 # main csv parse function
 def parse_csv(upload_file):
-    df = pd.read_csv(upload_file)
-    df.columns = df.columns.str.lower().str.strip()
+    try:
+        try:
+            df = pd.read_csv(upload_file)
+        except Exception:
+            return [], "Invalid CSV file. Could not be read."
+        if df.empty:
+            return [], "CSV file is empty."
 
-    # prepare geometry
-    geometry_list = []
+        df.columns = df.columns.str.lower().str.strip()
+        geometry_list = []
 
-    # single-row polygon coordinates
-    if "coordinates" in df.columns:
-        for _, row in df.iterrows():
-            coords = json.loads(row["coordinates"])
-            geometry_list.append(ee.Geometry.Polygon(coords))
-        return geometry_list
+        # single-row polygon coordinates
+        if "coordinates" in df.columns:
+            for idx, row in df.iterrows():
+                try:
+                    coords = json.loads(row["coordinates"])
+                    geometry_list.append(ee.Geometry.Polygon(coords))
+                except Exception:
+                    return [], "Invalid 'coordinates' column. Must contain valid JSON polygon coordinates."
+            if not geometry_list:
+                return [], "No valid geometries found in 'coordinates' column."
+            return geometry_list, None
 
-    # multirow polygon coordinates
-    x_col = find_column(df, COLUMN_SYNONYMS["x"])
-    y_col = find_column(df, COLUMN_SYNONYMS["y"])
+        # multi-row polygon coordinates
+        required_cols = ["id", "vertex_index"]
+        for col in required_cols:
+            if col not in df.columns:
+                return [], f"Missing required column '{col}'."
 
-    for _, group in df.groupby("id"):
-        coords = group.sort_values("vertex_index")[[x_col, y_col]].values.tolist()
-        # always check if  the polygon coords close the shape and fix it
-        if coords[0] != coords[-1]:
-            coords.append(coords[0])
-        geometry_list.append(ee.Geometry.Polygon(coords))
+        x_col = find_column(df, COLUMN_SYNONYMS["x"])
+        y_col = find_column(df, COLUMN_SYNONYMS["y"])
 
-    return geometry_list
+        if not x_col or not y_col:
+            return [], "Could not detect longitude/latitude columns."
 
+        for gid, group in df.groupby("id"):
+            try:
+                group = group.sort_values("vertex_index")
+                coords = group[[x_col, y_col]].values.tolist()
+                
+                # checks for minimum polygon vertices
+                if len(coords) < 3:
+                    return [], f"Polygon with id '{gid}' has fewer than 3 vertices."
+                # always check if  the polygon coords close the shape and fix it
+                if coords[0] != coords[-1]:
+                    coords.append(coords[0])
+                geometry_list.append(ee.Geometry.Polygon(coords))
+
+            except Exception:
+                return [], f"Invalid polygon geometry for id '{gid}'."
+
+        if not geometry_list:
+            return [], "No valid polygon geometries could be constructed from CSV."
+        return geometry_list, None
+
+    except Exception as e:
+        return [], f"Error processing CSV file: {str(e)}"
 
 # File Parser: KML (.kml)
 def parse_kml(upload_file):
@@ -661,9 +692,12 @@ def upload_files_proc(upload_files):
 
         # CSV file parser
         if file_name.endswith(".csv"):
-            csv_geoms = parse_csv(upload_file)
+            csv_geoms, error = parse_csv(upload_file)
+            if error:
+                error_messages.append(f"→ {file_name}:\n > {error}")
             geometry_aoi_list.extend(csv_geoms)
-            last_uploaded_centroid = csv_geoms[0].centroid(maxError=1).getInfo()["coordinates"]
+            if csv_geoms:
+                last_uploaded_centroid = csv_geoms[0].centroid(maxError=1).getInfo()["coordinates"]
             continue
 
         # ZIP shapefile parser
