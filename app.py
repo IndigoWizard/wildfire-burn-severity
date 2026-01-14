@@ -339,27 +339,53 @@ def satCollection(cloudRate, initialDate, updatedDate, aoi):
 def show_upload_error(messages):
     st.error(messages)
 
-# File Parser: GeoPackage (`.gpkg`)
-def parse_geopackage(upload_file):
-
+# File Parser: GeoPackage (.gpkg)
+def parse_geopackage(gpkg_path):
     # prepare geometry
     geometry_list = []
-    
-    with fiona.open(upload_file) as fu:
-        for feat in fu:
-            # Convert geometry to a Shapely geometry object
-            geom = shape(feat["geometry"])
 
-            # handle basic polygon
-            if geom.geom_type == "Polygon":
-                geometry_list.append(ee.Geometry.Polygon(list(geom.exterior.coords)))
-            
-            # handle multipolygon
-            elif geom.geom_type == "MultiPolygon":
-                coords = [list(poly.exterior.coords) for poly in geom.geoms]
-                geometry_list.append(ee.Geometry.MultiPolygon(coords))
-    
-    return geometry_list
+    try:
+        with fiona.open(gpkg_path) as fu:
+
+            if len(fu) == 0:
+                return [], "GeoPackage contains no features."
+
+            for feat in fu:
+                if not feat or not feat.get("geometry"):
+                    continue
+
+                try:
+                    geom = shape(feat["geometry"])
+                except Exception:
+                    continue
+
+                # Polygon
+                if geom.geom_type == "Polygon":
+                    try:
+                        geometry_list.append(ee.Geometry.Polygon(list(geom.exterior.coords)))
+                    except Exception:
+                        continue
+
+                # MultiPolygon
+                elif geom.geom_type == "MultiPolygon":
+                    try:
+                        coords = [list(poly.exterior.coords) for poly in geom.geoms]
+                        geometry_list.append(ee.Geometry.MultiPolygon(coords))
+                    except Exception:
+                        continue
+
+                # Ignore other geometry types silently
+
+        if not geometry_list:
+            return [], "No valid Polygon or MultiPolygon geometries found in GeoPackage."
+
+        return geometry_list, None
+
+    except fiona.errors.DriverError:
+        return [], "Invalid or corrupted GeoPackage file."
+
+    except Exception as e:
+        return [], f"Error processing GeoPackage file: {str(e)}"
 
 
 # File Parser: CSV
@@ -712,13 +738,16 @@ def upload_files_proc(upload_files):
                 # write data to disk for readability
                 tmp.flush()
                 # parse temporary geopackage
-                gpkg_geoms = parse_geopackage(tmp.name)
-            
+                gpkg_geoms, error = parse_geopackage(tmp.name)
+
+            if error:
+                error_messages.append(f"→ {file_name}:\n > {error}")
+
             geometry_aoi_list.extend(gpkg_geoms)
 
             if gpkg_geoms:
                 last_uploaded_centroid = gpkg_geoms[0].centroid(maxError=1).getInfo()["coordinates"]
-            
+
             continue
 
         # CSV file parser
