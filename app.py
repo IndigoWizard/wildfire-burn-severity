@@ -438,30 +438,61 @@ def parse_csv(upload_file):
 
 # File Parser: KML (.kml)
 def parse_kml(upload_file):
-    upload_file.seek(0)
-    tree = ET.parse(upload_file)
-    # get the kml tree structure
-    root = tree.getroot()
-    # namespace
-    ns = {"kml": "http://www.opengis.net/kml/2.2"}
+    try:
+        upload_file.seek(0)
+        try:
+            tree = ET.parse(upload_file)
+        except ET.ParseError:
+            return [], "Invalid KML file. XML could not be parsed."
 
-    polygons = []
-    # getting coordinates from placemark in the kml
-    for placemark in root.findall(".//kml:Placemark", ns):
-        coords_text = placemark.find(".//kml:coordinates", ns)
-        if coords_text is not None:
-            coords_raw = coords_text.text.strip().split()
-            coords = []
-            for c in coords_raw:
-                lon, lat, *_ = map(float, c.split(","))
-                coords.append([lon, lat])
+        # get kml tree structure
+        root = tree.getroot()
 
-            # ensuring closed polygon using same xy at start and end
-            if coords[0] != coords[-1]:
-                coords.append(coords[0])
-            polygons.append(ee.Geometry.Polygon([coords]))
+        # namespace
+        ns = {"kml": "http://www.opengis.net/kml/2.2"}
 
-    return polygons
+        placemarks = root.findall(".//kml:Placemark", ns)
+        if not placemarks:
+            return [], "No Placemark elements found in KML file."
+
+        geometry_list = []
+
+        # getting coordinates from placemark in the kml
+        for placemark in placemarks:
+            coords_elem = placemark.find(".//kml:coordinates", ns)
+            if coords_elem is None or not coords_elem.text:
+                continue
+
+            try:
+                coords_raw = coords_elem.text.strip().split()
+                coords = []
+
+                for c in coords_raw:
+                    lon, lat, *_ = map(float, c.split(","))
+                    coords.append([lon, lat])
+
+                # valid polygon needs at least 3 points
+                if len(coords) < 3:
+                    continue
+
+                # ensure closed polygon
+                if coords[0] != coords[-1]:
+                    coords.append(coords[0])
+
+                ee_geom = ee.Geometry.Polygon([coords])
+                geometry_list.append(ee_geom)
+
+            except Exception:
+                # skip malformed placemark
+                continue
+
+        if not geometry_list:
+            return [], "No valid polygon geometries could be constructed from KML."
+
+        return geometry_list, None
+
+    except Exception as e:
+        return [], f"Error processing KML file: {str(e)}"
 
 # File Parser: Zipped Shapefile (.zip)
 def parse_zip_shapefile(upload_file):
@@ -712,9 +743,11 @@ def upload_files_proc(upload_files):
 
         # KML file parser
         if file_name.endswith(".kml"):
-            kml_geoms = parse_kml(upload_file)
+            kml_geoms, error = parse_kml(upload_file)
+            if error:
+                error_messages.append(f"→ {file_name}:\n > {error}")
+            geometry_aoi_list.extend(kml_geoms)
             if kml_geoms:
-                geometry_aoi_list.extend(kml_geoms)
                 last_uploaded_centroid = kml_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
 
