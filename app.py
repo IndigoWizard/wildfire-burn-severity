@@ -625,21 +625,35 @@ def parse_geojson(upload_file):
         return [], f"Error processing GeoJSON file: {str(e)} Please verify the file is valid."
 
 
-# File Parser: TopoJSON (.topojson, .json)
+# File Parser: TopoJSON (.topojson)
 def parse_topojson(upload_file):
-    
-    bytes_data = upload_file.read()
-    topojson_data = json.loads(bytes_data)
-    
-    # Check if this is actually a TopoJSON file
-    if 'type' in topojson_data and topojson_data['type'] == 'Topology':
+    try:
+        bytes_data = upload_file.read()
+
+        try:
+            topojson_data = json.loads(bytes_data)
+        except json.JSONDecodeError:
+            return [], "Invalid TopoJSON file. JSON could not be decoded."
+
+        # Check TopoJSON signature
+        if topojson_data.get("type") != "Topology":
+            return [], "File is not a valid TopoJSON (missing or invalid 'Topology' type)."
+
         # Manually decode TopoJSON arcs to avoid library performance issues
         # Extract arcs and transform parameters
-        arcs = topojson_data.get('arcs', [])
-        transform = topojson_data.get('transform', {})
-        scale = transform.get('scale', [1, 1])
-        translate = transform.get('translate', [0, 0])
-        
+        arcs = topojson_data.get("arcs")
+        objects = topojson_data.get("objects")
+        transform = topojson_data.get("transform", {})
+        scale = transform.get("scale", [1, 1])
+        translate = transform.get("translate", [0, 0])
+
+        if not arcs or not isinstance(arcs, list):
+            return [], "TopoJSON file contains no valid arcs."
+
+        if not objects or not isinstance(objects, dict):
+            return [], "TopoJSON file contains no objects."
+
+
         # Decode arcs from delta-encoded to absolute coordinates
         decoded_arcs = []
         for arc in arcs:
@@ -652,65 +666,80 @@ def parse_topojson(upload_file):
                 lat = y * scale[1] + translate[1]
                 points.append([lon, lat])
             decoded_arcs.append(points)
-        
+
         # Extract geometries from objects
         geometries = []
-        if 'objects' in topojson_data:
-            for obj_name, obj_data in topojson_data['objects'].items():
-                if obj_data.get('type') == 'GeometryCollection':
-                    geometries.extend(obj_data.get('geometries', []))
-                else:
-                    geometries.append(obj_data)        
-        # Convert geometry to match earth engine geometry object (as multipolygon)
-        
+        for obj in objects.values():
+            if obj.get("type") == "GeometryCollection":
+                geometries.extend(obj.get("geometries", []))
+            else:
+                geometries.append(obj)
+
+        if not geometries:
+            return [], "TopoJSON file contains no geometries."
+
         # Convert geometries to Earth Engine geometry objects
         geometry_list = []
-        
+
+        # Build Earth Engine geometries
         for geom_data in geometries:
-            geom_type = geom_data.get('type')
-            arcs_refs = geom_data.get('arcs', [])
-            
-            if geom_type == 'Polygon':
-                # Polygon: arcs_refs is a list of arc index lists (one per ring)
-                rings = []
-                for ring_refs in arcs_refs:
-                    ring = []
-                    for arc_ref in ring_refs:
-                        arc_idx = abs(arc_ref)
-                        arc_points = decoded_arcs[arc_idx] if arc_ref >= 0 else list(reversed(decoded_arcs[arc_idx]))
-                        ring.extend(arc_points)
-                    rings.append(ring)
-                
-                try:
-                    ee_geom = ee.Geometry.Polygon(rings)
-                    geometry_list.append(ee_geom)
-                except Exception:
-                    continue
-                    
-            elif geom_type == 'MultiPolygon':
-                # MultiPolygon: arcs_refs is a list of polygons
-                polygons = []
-                for polygon_refs in arcs_refs:
+            geom_type = geom_data.get("type")
+            arcs_refs = geom_data.get("arcs")
+
+            if not arcs_refs:
+                continue
+
+            try:
+                # Polygon
+                if geom_type == "Polygon":
+                    # Polygon: arcs_refs is a list of arc index lists (one per ring)
                     rings = []
-                    for ring_refs in polygon_refs:
+                    for ring_refs in arcs_refs:
                         ring = []
                         for arc_ref in ring_refs:
                             arc_idx = abs(arc_ref)
-                            arc_points = decoded_arcs[arc_idx] if arc_ref >= 0 else list(reversed(decoded_arcs[arc_idx]))
+                            arc_points = (
+                                decoded_arcs[arc_idx]
+                                if arc_ref >= 0
+                                else list(reversed(decoded_arcs[arc_idx]))
+                            )
                             ring.extend(arc_points)
                         rings.append(ring)
-                    polygons.append(rings)
-                
-                try:
-                    ee_geom = ee.Geometry.MultiPolygon(polygons)
-                    geometry_list.append(ee_geom)
-                except Exception:
-                    continue
-                        
-        return geometry_list
-    else:
-        # Not a valid TopoJSON file
-        return []
+
+                    geometry_list.append(ee.Geometry.Polygon(rings))
+
+                # MultiPolygon
+                elif geom_type == "MultiPolygon":
+                    polygons = []
+                    for polygon_refs in arcs_refs:
+                        rings = []
+                        for ring_refs in polygon_refs:
+                            ring = []
+                            for arc_ref in ring_refs:
+                                arc_idx = abs(arc_ref)
+                                arc_points = (
+                                    decoded_arcs[arc_idx]
+                                    if arc_ref >= 0
+                                    else list(reversed(decoded_arcs[arc_idx]))
+                                )
+                                ring.extend(arc_points)
+                            rings.append(ring)
+                        polygons.append(rings)
+
+                    geometry_list.append(ee.Geometry.MultiPolygon(polygons))
+
+                # Ignore other geometry types
+
+            except Exception:
+                continue
+
+        if not geometry_list:
+            return [], "No valid Polygon or MultiPolygon geometries could be constructed from TopoJSON."
+
+        return geometry_list, None
+
+    except Exception as e:
+        return [], f"Error processing TopoJSON file: {str(e)}"
 
 
 # Main Upload Function
@@ -782,9 +811,11 @@ def upload_files_proc(upload_files):
 
         # File Parser: TopoJSON files
         if file_name.endswith(".topojson"):
-            topojson_geoms = parse_topojson(upload_file)
+            topojson_geoms, error = parse_topojson(upload_file)
+            if error:
+                error_messages.append(f"→ {file_name}:\n > {error}")
             geometry_aoi_list.extend(topojson_geoms)
-            
+
             if topojson_geoms:
                 last_uploaded_centroid = topojson_geoms[0].centroid(maxError=1).getInfo()['coordinates']
             continue
