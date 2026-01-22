@@ -304,6 +304,11 @@ def ee_authenticate():
         # Fallback to normal init method if no json key/st secrets available. (local machine)
         ee.Initialize()
 
+# Error dialog box
+@st.dialog("Error Report:")
+def show_error_dialog(messages):
+    st.error(messages)
+
 # Earth Engine drawing method setup
 def add_ee_layer(self, ee_image_object, vis_params, name):
     map_id_dict = ee.Image(ee_image_object).getMapId(vis_params)
@@ -322,22 +327,34 @@ folium.Map.add_ee_layer = add_ee_layer
 
 # Defining a function to create and filter a GEE image collection for results
 def satCollection(cloudRate, initialDate, updatedDate, aoi):
-    collection = ee.ImageCollection('COPERNICUS/S2_SR') \
-        .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", cloudRate)) \
-        .filterDate(initialDate, updatedDate) \
-        .filterBounds(aoi)
-    
-    # Defining a function to clip the colleciton to the area of interst
-    def clipCollection(image):
-        return image.clip(aoi).divide(10000)
-    # clipping the collection
-    collection = collection.map(clipCollection)
-    return collection
+    try:
+        collection = (
+            ee.ImageCollection('COPERNICUS/S2_SR')
+            .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", cloudRate))
+            .filterDate(initialDate, updatedDate)
+            .filterBounds(aoi)
+            )
+            
+        # Check collection size
+        collection_size = collection.size().getInfo()
 
-# Error dialog box
-@st.dialog("Error Report:")
-def show_upload_error(messages):
-    st.error(messages)
+        if collection_size == 0:
+            return None, (
+                "No Sentinel-2 L2A images found for the selected parameters. \n\n"
+                "Try increasing the cloud threshold or expanding the date range."
+            )
+
+        # Defining a function to clip the colleciton to the area of interst
+        def clipCollection(image):
+            return image.clip(aoi).divide(10000)
+        # clipping the collection
+        collection = collection.map(clipCollection)
+        
+        return collection, None
+    
+    except Exception as e:
+        return collection, f"Earth Engine encountered an error while building Sentinel-2 Collection: \n {str(e)}"
+
 
 # File Parser: GeoPackage (.gpkg)
 def parse_geopackage(gpkg_path):
@@ -834,7 +851,7 @@ def upload_files_proc(upload_files):
             continue
     
     if error_messages:
-        show_upload_error("\n\n---\n\n".join(error_messages))
+        show_error_dialog("\n\n---\n\n".join(error_messages))
     # assembling aoi geometries
     if geometry_aoi_list:
         geometry_aoi = ee.Geometry.MultiPolygon(geometry_aoi_list)
@@ -878,6 +895,11 @@ def geojson_area(aoi):
 def main():
     # initialize gee 
     ee_authenticate()
+
+    # Session states
+    st.session_state.setdefault("ee_ready", False)
+    st.session_state.setdefault("masked_dNBR_classified", None)
+    st.session_state.setdefault("geometry_aoi", None)
 
     # sidebar
     with st.sidebar:
@@ -1007,134 +1029,158 @@ def main():
             #### Satellite imagery Processing Section - START
 
             ## Defining and clipping image collections for both dates:
+            ee_ready = True
+
             # Pre-fire
-            pre_fire_collection = satCollection(cloud_pixel_percentage, str_initial_start_date, str_initial_end_date, geometry_aoi)
+            pre_fire_collection, pre_fire_error = satCollection(cloud_pixel_percentage, str_initial_start_date, str_initial_end_date, geometry_aoi)
+            
+            if pre_fire_error:
+                show_error_dialog(f"Pre-fire collection error: \n > {pre_fire_error}")
+                ee_ready = False
+            
             # Post-fire
-            post_fire_collection = satCollection(cloud_pixel_percentage, str_updated_start_date, str_updated_end_date, geometry_aoi)
+            post_fire_collection, post_fire_error = satCollection(cloud_pixel_percentage, str_updated_start_date, str_updated_end_date, geometry_aoi)
 
-            # setting a sat_imagery variable that could be used for various processes later on (tci, NBR... etc)
-            pre_fire = pre_fire_collection.median()
-            post_fire = post_fire_collection.median()
+            if post_fire_error:
+                show_error_dialog(f"Pre-fire collection error: \n > {post_fire_error}")
+                ee_ready = False
 
-            ####################  Remote Sensing Index #################### 
+            if ee_ready:
+                # setting a sat_imagery variable that could be used for various processes later on (tci, NBR... etc)
+                pre_fire = pre_fire_collection.median()
+                post_fire = post_fire_collection.median()
 
-            # Satellite image
-            pre_fire_satImg = pre_fire
-            post_fire_satImg = post_fire
+                ####################  Remote Sensing Index #################### 
 
-            # Sat image visual parameters
-            satImg_params = {
-            'bands': ['B12',  'B11',  'B4'],
-            'min': 0,
-            'max': 1,
-            'gamma': 1.1
-            }
+                # Satellite image
+                pre_fire_satImg = pre_fire
+                post_fire_satImg = post_fire
 
-            # NDWI (Normalized Difference Water Index)
-            def get_NDWI(image):
-                return image.normalizedDifference(['B3', 'B11'])
+                # Sat image visual parameters
+                satImg_params = {
+                'bands': ['B12',  'B11',  'B4'],
+                'min': 0,
+                'max': 1,
+                'gamma': 1.1
+                }
 
-            pre_fire_ndwi = get_NDWI(pre_fire)
-            post_fire_ndwi = get_NDWI(post_fire)
+                # NDWI (Normalized Difference Water Index)
+                def get_NDWI(image):
+                    return image.normalizedDifference(['B3', 'B11'])
 
-            ndwi_params = {
-            'min': -1,
-            'max': 0,
-            'palette': ndwi_palette
-            }
+                pre_fire_ndwi = get_NDWI(pre_fire)
+                post_fire_ndwi = get_NDWI(post_fire)
 
-            # NBR (Normalized Burn Ratio)
-            def get_NBR(image):
-                return image.normalizedDifference(['B8', 'B12'])
+                ndwi_params = {
+                'min': -1,
+                'max': 0,
+                'palette': ndwi_palette
+                }
 
-            # claculating NBR for pre/post fire
-            pre_fire_NBR = get_NBR(pre_fire_satImg)
-            post_fire_NBR = get_NBR(post_fire_satImg)
+                # NBR (Normalized Burn Ratio)
+                def get_NBR(image):
+                    return image.normalizedDifference(['B8', 'B12'])
 
-            # Delta NBR (dNBR)
-            dNBR = pre_fire_NBR.subtract(post_fire_NBR)
+                # claculating NBR for pre/post fire
+                pre_fire_NBR = get_NBR(pre_fire_satImg)
+                post_fire_NBR = get_NBR(post_fire_satImg)
 
-            dNBR_params = {
-            'min': -0.5,
-            'max': 1.3,
-            'palette': dnbr_palette
-            }
+                # Delta NBR (dNBR)
+                dNBR = pre_fire_NBR.subtract(post_fire_NBR)
 
-            img_classifier = dNBR
+                dNBR_params = {
+                'min': -0.5,
+                'max': 1.3,
+                'palette': dnbr_palette
+                }
 
-            dNBR_classified = ee.Image(img_classifier) \
-                .where(img_classifier.gte(-0.5).And(img_classifier.lt(-0.251)), 1) \
-                .where(img_classifier.gte(-0.250).And(img_classifier.lt(-0.101)), 2) \
-                .where(img_classifier.gte(-0.100).And(img_classifier.lt(0.99)), 3) \
-                .where(img_classifier.gte(0.100).And(img_classifier.lt(0.269)), 4) \
-                .where(img_classifier.gte(0.270).And(img_classifier.lt(0.439)), 5) \
-                .where(img_classifier.gte(0.440).And(img_classifier.lt(0.659)), 6) \
-                .where(img_classifier.gte(0.660).And(img_classifier.lte(1.300)), 7) \
+                img_classifier = dNBR
 
-            # Classified dNBR visual parameters
-            dNBR_classified_params = {
-            'min': 1,
-            'max': 7,
-            'palette': dNBR_classified_palette
-            }
+                dNBR_classified = ee.Image(img_classifier) \
+                    .where(img_classifier.gte(-0.5).And(img_classifier.lt(-0.251)), 1) \
+                    .where(img_classifier.gte(-0.250).And(img_classifier.lt(-0.101)), 2) \
+                    .where(img_classifier.gte(-0.100).And(img_classifier.lt(0.99)), 3) \
+                    .where(img_classifier.gte(0.100).And(img_classifier.lt(0.269)), 4) \
+                    .where(img_classifier.gte(0.270).And(img_classifier.lt(0.439)), 5) \
+                    .where(img_classifier.gte(0.440).And(img_classifier.lt(0.659)), 6) \
+                    .where(img_classifier.gte(0.660).And(img_classifier.lte(1.300)), 7) \
 
-            ## Image masking
-            # making the NDWI show only water part on NDWI layer
-            masked_pre_fire_ndwi = pre_fire_ndwi.updateMask(pre_fire_ndwi.gt(-0.12))
-            # post_fire_ndwi = post_fire_ndwi.updateMask(post_fire_ndwi.gt(-0.12))
+                # Classified dNBR visual parameters
+                dNBR_classified_params = {
+                'min': 1,
+                'max': 7,
+                'palette': dNBR_classified_palette
+                }
 
-            # The following masks are not depandant/tied to the masked_pre_fire_ndwi variable/layer
+                ## Image masking
+                # making the NDWI show only water part on NDWI layer
+                masked_pre_fire_ndwi = pre_fire_ndwi.updateMask(pre_fire_ndwi.gt(-0.12))
+                # post_fire_ndwi = post_fire_ndwi.updateMask(post_fire_ndwi.gt(-0.12))
 
-            # Creating a binary mask based on original NDWI: water = black = 0 | land = white = 1
-            binaryMask = pre_fire_ndwi.lt(-0.1)
+                # The following masks are not depandant/tied to the masked_pre_fire_ndwi variable/layer
 
-            # Creating a water mask based on NDWI binarmy mask using the land area (1)
-            waterMask = binaryMask.selfMask()
+                # Creating a binary mask based on original NDWI: water = black = 0 | land = white = 1
+                binaryMask = pre_fire_ndwi.lt(-0.1)
 
-            ## Clipping raster images to the water mask
+                # Creating a water mask based on NDWI binarmy mask using the land area (1)
+                waterMask = binaryMask.selfMask()
 
-            # masked_dNBR = dNBR.updateMask(waterMask)
-            masked_dNBR_classified = dNBR_classified.updateMask(waterMask)
+                ## Clipping raster images to the water mask
 
-            ### Burn scar area - vector
-            # Define arbitrary thresholds on the classified dNBR image.
-            dNBR_classified = dNBR_classified.gte(4)
-            dNBR_classified = dNBR_classified.updateMask(dNBR_classified.neq(0))
+                # masked_dNBR = dNBR.updateMask(waterMask)
+                masked_dNBR_classified = dNBR_classified.updateMask(waterMask)
 
-            # Convert the zones of the thresholded burn areas to vectors.
-            vectors = dNBR_classified.addBands(dNBR_classified).reduceToVectors(
-                **{
-                    'geometry': geometry_aoi,
-                    'crs': dNBR_classified.projection(),
-                    'scale': 10,
-                    'geometryType': 'polygon',
-                    'eightConnected': False,
-                    'labelProperty': 'zone',
-                    'reducer': ee.Reducer.mean(),
-                    'bestEffort': True
-                })
-            # Burn scar based on converted rasters to vectors> Is displayed as its own layer
-            burn_scar = ee.Image(0).updateMask(0).paint(vectors, '000000', 2)
+                ### Burn scar area - vector
+                # Define arbitrary thresholds on the classified dNBR image.
+                dNBR_classified = dNBR_classified.gte(4)
+                dNBR_classified = dNBR_classified.updateMask(dNBR_classified.neq(0))
 
-            #### Satellite imagery Processing Section - END
+                # Convert the zones of the thresholded burn areas to vectors.
+                vectors = dNBR_classified.addBands(dNBR_classified).reduceToVectors(
+                    **{
+                        'geometry': geometry_aoi,
+                        'crs': dNBR_classified.projection(),
+                        'scale': 10,
+                        'geometryType': 'polygon',
+                        'eightConnected': False,
+                        'labelProperty': 'zone',
+                        'reducer': ee.Reducer.mean(),
+                        'bestEffort': True
+                    })
+                # Burn scar based on converted rasters to vectors> Is displayed as its own layer
+                burn_scar = ee.Image(0).updateMask(0).paint(vectors, '000000', 2)
+
+                #### Satellite imagery Processing Section - END
 
             ### Layers section - START
-            # Check if the initial and updated dates are the same
-            if initial_date == updated_date:
-                m.add_ee_layer(post_fire_satImg, satImg_params, 'Satellite Imagery')
+            if ee_ready:
+                st.session_state.ee_ready = True
+                st.session_state.masked_dNBR_classified = masked_dNBR_classified
+                st.session_state.geometry_aoi = geometry_aoi
+
+                # Check if the initial and updated dates are the same
+                if initial_date == updated_date:
+                    m.add_ee_layer(post_fire_satImg, satImg_params, 'Satellite Imagery')
+                    st.toast(f"Results found for: \n\n {initial_date}")
+
+                else:
+                    m.add_ee_layer(pre_fire_satImg, satImg_params, f'Pre-Fire Satellite Imagery: {initial_date}')
+                    m.add_ee_layer(post_fire_satImg, satImg_params, f'Post-Fire Satellite Imagery: {updated_date}')
+
+                    # m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'dNBR Classes')
+
+                    m.add_ee_layer(masked_pre_fire_ndwi, ndwi_params, f'NDWI: {initial_date}')
+
+                    # m.add_ee_layer(updateMask, dNBR_params, 'NBR "_masked')
+                    # m.add_ee_layer(binaryMask, {}, 'binaryMask')
+                    # m.add_ee_layer(waterMask, {}, 'SelfMak')
+                    m.add_ee_layer(masked_dNBR_classified, dNBR_classified_params, 'Reclassified dNBR')
+                    m.add_ee_layer(burn_scar, {'palette': '#87043b'}, 'Burn Scar')
+                    st.toast(f"Results found for: [{initial_date}]-[{updated_date}]")
+                            
             else:
-                m.add_ee_layer(pre_fire_satImg, satImg_params, f'Pre-Fire Satellite Imagery: {initial_date}')
-                m.add_ee_layer(post_fire_satImg, satImg_params, f'Post-Fire Satellite Imagery: {updated_date}')
-
-                # m.add_ee_layer(dNBR_classified, dNBR_classified_params, 'dNBR Classes')
-
-                m.add_ee_layer(masked_pre_fire_ndwi, ndwi_params, f'NDWI: {initial_date}')
-
-                # m.add_ee_layer(updateMask, dNBR_params, 'NBR "_masked')
-                # m.add_ee_layer(binaryMask, {}, 'binaryMask')
-                # m.add_ee_layer(waterMask, {}, 'SelfMak')
-                m.add_ee_layer(masked_dNBR_classified, dNBR_classified_params, 'Reclassified dNBR')
-                m.add_ee_layer(burn_scar, {'palette': '#87043b'}, 'Burn Scar')
+                st.session_state.ee_ready = False
+                st.toast("No satellite imagery available for the selected parameters.")
 
             #### Layers section - END
 
@@ -1202,7 +1248,10 @@ def main():
     @st.fragment
     def generate_report():
         with st.form("report_form"):
-        
+
+            masked_dNBR_classified = st.session_state.masked_dNBR_classified
+            geometry_aoi = st.session_state.geometry_aoi
+            
             #### Area Calculation - START
 
             # geojson area: (geometry area)
