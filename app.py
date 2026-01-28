@@ -9,7 +9,9 @@ import ee
 from ee import oauth
 from google.oauth2 import service_account
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import folium_static, st_folium
+from branca.element import Template, MacroElement, Figure, Element
+from folium.utilities import escape_backticks
 from streamlit_elements import elements, mui
 from streamlit_elements import nivo
 from datetime import datetime, timedelta, date
@@ -281,8 +283,15 @@ st.markdown(
         background: rgba(0, 0, 0, 0.12);
         cursor: pointer;
     }
-    
 
+    .stCustomComponentV1.st-emotion-cache-1tvzk6f.e1begtbc0 {
+        width: 100%;
+        height: 500px !important;
+        min-height: 500px !important;
+        max-height: 500px !important;
+        overflow: hidden !important;
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
@@ -1012,19 +1021,128 @@ def main():
             if last_uploaded_centroid is not None:
                 latitude = last_uploaded_centroid[1]
                 longitude = last_uploaded_centroid[0]
-                m = folium.Map(location=[latitude, longitude], tiles=None, zoom_start=11, control_scale=True)
+                m = folium.Map(location=[latitude, longitude], tiles=None, zoom_start=11, control_scale=True, attributionControl=0)
             else:
                 latitude=36.60
                 longitude=16.00
                 # Default location if no file is uploaded
-                m = folium.Map(location=[36.60, 16.00], tiles=None, zoom_start=5, control_scale=True)
-
+                m = folium.Map(location=[36.60, 16.00], tiles=None, zoom_start=5, control_scale=True, attributionControl=0)
+       
             ## Primary basemap
             # OSM
             b0 = folium.TileLayer('OpenStreetMap', name="Open Street Map", attr="OSM")
             b0.add_to(m)
-            b1 = folium.TileLayer('cartodbdark_matter', name='Dark Basemap', attr='CartoDB')
+
+            # Mapbox
+            mapbox_api = st.secrets["mapbox_token"]
+            mapbox_url = f"https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{{z}}/{{x}}/{{y}}?access_token={mapbox_api}"
+
+            b1 = folium.TileLayer(tiles=mapbox_url, attr='Mapbox', name='Mapbox Dark', overlay=False, control=True, max_zoom=20, min_zoom=1 )
             b1.add_to(m)
+
+            # custom attribution textbox
+            class MyCustomAttribution(MacroElement):
+                _template = Template("""
+                    {% macro script(this, kwargs) %}
+
+                    L.Control.MyCustomAttribution = L.Control.extend({
+                        onAdd: function(map) {
+                            let div = L.DomUtil.create('div', 'map-credit-box');
+                            div.innerHTML = `{{ this.injectedHtml }}`;
+                            L.DomEvent.disableClickPropagation(div);
+                            return div;
+                        }
+                    });
+
+                    L.control.myCustomAttribution = function(opts) {
+                        return new L.Control.MyCustomAttribution(opts);
+                    };
+
+                    L.control.myCustomAttribution({
+                        position: "{{ this.position }}"
+                    }).addTo({{ this._parent.get_name() }});
+
+                    {% endmacro %}
+                """)
+
+                def __init__(self, injectedHtml, position="bottomright"):
+                    super().__init__()
+                    self.injectedHtml = escape_backticks(injectedHtml)
+                    self.position = position
+
+            credit_html = """
+                <style>
+                    .map-credit-box.leaflet-control {
+                        bottom: -10px;
+                        right: -10px;
+                        z-index: 9999;
+                        background: rgba(255, 255, 255, 0.85);
+                        color: #333;
+                        padding: 2px 2px;
+                        border-radius: 4px;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        font-family: "Segoe UI", "Noto Sans", sans-serif;
+                        line-height: 1.2;
+                        max-width: 90vw;
+                        white-space: normal;
+                    }
+
+                    .map-credit-box.leaflet-control a {
+                        color: #0078A8;
+                        text-decoration: none;
+                    }
+                    
+                    .leaflet-bottom .leaflet-control-scale{
+                        font-weight: 600;
+                        font-family: "Source Sans Pro", sans-serif;
+                        margin-bottom: 0;
+                    }
+
+                    /* Mobile adjustments */
+
+                    @media (max-width: 825px) {
+                        .leaflet-bottom .leaflet-control-scale{
+                            margin-bottom: 25px;
+                        }
+                    }
+                    @media (max-width: 815px) {
+                        .map-credit-box.leaflet-control {
+                            max-width: 100%;
+                            width: 100%;
+                        }
+                        .leaflet-bottom .leaflet-control-scale{
+                            margin-bottom: 45px;
+                        }
+                    }
+                    @media (max-width: 610px) {
+                        .map-credit-box.leaflet-control {
+                            font-size: 0.8rem;
+                            max-width: 100%;
+                            text-align: center;
+                        }
+                        .leaflet-bottom .leaflet-control-scale{
+                            margin-bottom: 45px;
+                        }
+                    }
+                    @media (max-width: 550px) {
+                        .map-credit-box.leaflet-control {
+                            width: 100%;
+                            text-align: center;
+                        }
+                        .leaflet-bottom .leaflet-control-scale{
+                            margin-bottom: 45px;
+                        }
+                    }
+                </style>
+
+            🇵🇸 Wildfire Burn Severity Analysis by <a href="https://github.com/IndigoWizard/wildfire-burn-severity" target="_blank" rel="noopener noreferrer">@IndigoWizard</a> | Map Data: <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>, <a href="https://www.openstreetmap.org/about" target="_blank" rel="noopener noreferrer">OSM</a>, <a href="https://www.mapbox.com/about/maps" target="_blank" rel="noopener noreferrer">Mapbox</a>, <a href="https://sentinels.copernicus.eu/sentinel-data-access/sentinel-products/sentinel-2-data-products/collection-1-level-2a" target="_blank" rel="noopener noreferrer">Sentinel-2</a>, <a href="https://earthengine.google.com/" target="_blank" rel="noopener noreferrer">EarthEngine</a>
+            """
+
+
+
+            # add attribution control
+            MyCustomAttribution(credit_html, position="bottomright").add_to(m)
 
             #### Satellite imagery Processing Section - START
 
@@ -1185,19 +1303,22 @@ def main():
             #### Layers section - END
 
             #### Map result display - START
+
+            # full screen plugin
+            folium.plugins.Fullscreen(position="bottomright", title="Expand", title_cancel="Exit", force_separate_button=True).add_to(m)
             # Folium Map Layer Control: we can see and interact with map layers
             folium.LayerControl(collapsed=True).add_to(m)
             # Display the map
         submitted = c2.form_submit_button("Generate map")
         if submitted:
             with c1:
-                folium_static(m)
+                st_folium(m, use_container_width=True, height="500")
         else:
             with c1:
-                folium_static(m)
+                st_folium(m, use_container_width=True, height="500")
 
-            #### Map result display - END
-
+        #### Map result display - END
+    
     #### Legend - START
     with st.container():
         st.subheader("Map Legend:")
@@ -1696,17 +1817,6 @@ def main():
 
         #### Miscs Info - END
         
-
-    ##### Custom Styling
-    st.markdown(
-    """
-    <style>
-        /*Map iframe*/
-        iframe {
-            width: 100%;
-        }
-    </style>
-    """, unsafe_allow_html=True)
 
 # Run the app
 if __name__ == "__main__":
